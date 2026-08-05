@@ -1,0 +1,393 @@
+﻿@model DUTResManagementSystem.ViewModels.StaffDashboardViewModel
+
+@{
+    ViewBag.Title = "Residence Admin Dashboard";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<!-- Page Header -->
+<div class="page-header">
+    <div>
+        <h1><i class="fas fa-tachometer-alt me-2" style="color:var(--primary)"></i>Building Manager Dashboard</h1>
+        <div class="breadcrumb-text">
+            Welcome back, @Model.Staff.FirstName @Model.Staff.LastName
+            @if (Model.Staff.Residence != null)
+            {
+                <span style="color:var(--primary)"> — @Model.Staff.Residence.Name</span>
+            }
+        </div>
+    </div>
+    <div class="d-flex align-items-center gap-2">
+        <span class="badge" style="background:rgba(59,130,246,0.15);color:var(--primary);border:1px solid rgba(59,130,246,0.3);padding:0.5rem 0.75rem;">
+            <i class="fas fa-building me-1"></i>@Model.Staff.Role
+        </span>
+        <span class="badge" style="background:var(--bg-elevated);color:var(--text-muted);border:1px solid var(--border);padding:0.5rem 0.75rem;">
+            @Model.Staff.StaffNumber
+        </span>
+    </div>
+</div>
+
+<!-- Stat Cards -->
+<div class="row g-3 mb-4">
+    <div class="col-xl-3 col-md-6">
+        <div class="stat-card">
+            <div class="stat-icon" style="background:rgba(59,130,246,0.12);color:var(--primary)">
+                <i class="fas fa-users"></i>
+            </div>
+            <div>
+                <div class="stat-num">@Model.TotalStudents</div>
+                <div class="stat-label">Total Students</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-xl-3 col-md-6">
+        <div class="stat-card">
+            <div class="stat-icon" style="background:rgba(34,197,94,0.12);color:#22c55e">
+                <i class="fas fa-door-open"></i>
+            </div>
+            <div>
+                <div class="stat-num">@Model.AvailableRooms</div>
+                <div class="stat-label">Available Rooms</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-xl-3 col-md-6">
+        <div class="stat-card">
+            <div class="stat-icon" style="background:rgba(245,158,11,0.12);color:#f59e0b">
+                <i class="fas fa-tools"></i>
+            </div>
+            <div>
+                <div class="stat-num">@Model.PendingMaintenance</div>
+                <div class="stat-label">Pending Maintenance</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-xl-3 col-md-6">
+        <div class="stat-card">
+            <div class="stat-icon" style="background:rgba(16,185,129,0.12);color:#10b981">
+                <i class="fas fa-building"></i>
+            </div>
+            <div>
+                @if (Model.Staff.Residence != null)
+                {
+                    <div class="stat-num" style="font-size:1rem;color:var(--text-primary)">@Model.Staff.Residence.Name</div>
+                }
+                else
+                {
+                    <div class="stat-num" style="font-size:1rem;color:#f87171">Not Assigned</div>
+                }
+                <div class="stat-label">My Residence</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<h3>Messages</h3>
+@if (Model.Notifications != null && Model.Notifications.Any())
+{
+    foreach (var item in Model.Notifications)
+    {
+        <div class="alert alert-info">
+            <strong>@item.Title</strong><br />
+            @item.Message
+
+            <form method="post" action="@Url.Action("MarkAsRead", "Staff")">
+                <input type="hidden" name="id" value="@item.NotificationID" />
+                <button type="submit" class="btn btn-sm btn-success">
+                    Mark as Read
+                </button>
+            </form>
+        </div>
+    }
+}
+else
+{
+    <p>No new messages</p>
+}
+
+<!-- Quick Actions -->
+<div class="card mb-4">
+    <div class="card-header">
+        <i class="fas fa-bolt me-2" style="color:var(--primary)"></i>Quick Actions
+    </div>
+    <div class="card-body">
+        <div class="row g-3">
+            <div class="col-lg-2 col-md-3 col-sm-4 col-6">
+                <a href="@Url.Action("RoomAllocation", "Staff")" class="action-card">
+                    <div class="action-card-icon" style="background:rgba(59,130,246,0.12);color:var(--primary)">
+                        <i class="fas fa-bed"></i>
+                    </div>
+                    <h6>Room Allocation</h6>
+                    <p>Assign students to rooms</p>
+                </a>
+            </div>
+            <div class="col-lg-2 col-md-3 col-sm-4 col-6">
+                <a href="@Url.Action("RoomChangeRequests", "Staff")" class="action-card">
+                    <div class="action-card-icon" style="background:rgba(139,92,246,0.12);color:#8b5cf6">
+                        <i class="fas fa-exchange-alt"></i>
+                    </div>
+                    <h6>Room Changes</h6>
+                    <p>Review change requests</p>
+                </a>
+            </div>
+            <div class="col-lg-2 col-md-3 col-sm-4 col-6">
+                <a href="@Url.Action("SendAnnouncement", "Staff")" class="action-card">
+                    <div class="action-card-icon" style="background:rgba(34,197,94,0.12);color:#22c55e">
+                        <i class="fas fa-bullhorn"></i>
+                    </div>
+                    <h6>Send Announcement</h6>
+                    <p>Create announcements</p>
+                </a>
+            </div>
+            <div class="col-lg-2 col-md-3 col-sm-4 col-6">
+                <a href="@Url.Action("Reports", "Staff")" class="action-card">
+                    <div class="action-card-icon" style="background:rgba(245,158,11,0.12);color:#f59e0b">
+                        <i class="fas fa-tools"></i>
+                    </div>
+                    <h6>View Reports</h6>
+                    <p>Maintenance reports</p>
+                </a>
+            </div>
+            <div class="col-lg-2 col-md-3 col-sm-4 col-6">
+                <a href="@Url.Action("ViewAnnouncements", "Staff")" class="action-card">
+                    <div class="action-card-icon" style="background:rgba(14,116,144,0.12);color:#0e7490">
+                        <i class="fas fa-envelope-open"></i>
+                    </div>
+                    <h6>Announcements</h6>
+                    <p>View from admin</p>
+                </a>
+            </div>
+            <div class="col-lg-2 col-md-3 col-sm-4 col-6">
+                <a href="@Url.Action("ComplaintManagement", "Staff")" class="action-card">
+                    <div class="action-card-icon" style="background:rgba(239,68,68,0.12);color:#ef4444">
+                        <i class="fas fa-exclamation-triangle"></i>
+                    </div>
+                    <h6>Complaints</h6>
+                    <p>Manage complaints</p>
+                </a>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+<!-- Recent Content - Two Columns -->
+<div class="row g-3">
+    <!-- Recent Announcements -->
+    <div class="col-md-6">
+        <div class="card h-100">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <span><i class="fas fa-bullhorn me-2" style="color:var(--primary)"></i>Recent Announcements</span>
+                <a href="@Url.Action("ViewAnnouncements","Staff")" class="btn btn-sm btn-outline-primary">View All</a>
+            </div>
+            <div class="card-body p-0">
+                @if (Model.Announcements != null && Model.Announcements.Any())
+                {
+                    foreach (var a in Model.Announcements.Take(5))
+                    {
+                        <div class="d-flex align-items-start gap-3 p-3" style="border-bottom:1px solid var(--border-light)">
+                            <div style="width:8px;height:8px;border-radius:50%;background:var(--primary);margin-top:6px;flex-shrink:0"></div>
+                            <div class="flex-grow-1">
+                                <div style="font-weight:600;color:var(--text-primary);font-size:0.88rem">@a.Title</div>
+                                <div style="font-size:0.75rem;color:var(--text-muted);margin-top:0.25rem">
+                                    <i class="far fa-calendar-alt me-1"></i>@string.Format("{0:dd MMM yyyy}", a.DatePosted)
+                                </div>
+                            </div>
+                        </div>
+                    }
+                }
+                else
+                {
+                    <div class="text-center py-5" style="color:var(--text-muted)">
+                        <i class="fas fa-inbox fa-2x mb-2 opacity-50"></i>
+                        <p class="mb-0">No announcements yet</p>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Maintenance Requests (Sample Data - Replace with actual if available) -->
+    <div class="col-md-6">
+        <div class="card h-100">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <span><i class="fas fa-tools me-2" style="color:var(--primary)"></i>Maintenance Overview</span>
+                <a href="@Url.Action("Reports","Staff")" class="btn btn-sm btn-outline-primary">View Reports</a>
+            </div>
+            <div class="card-body">
+                <!-- Maintenance Status Summary -->
+                <div class="mb-4">
+                    <div class="d-flex justify-content-between mb-2">
+                        <span style="color:var(--text-secondary)">Pending Maintenance Requests</span>
+                        <span class="fw-bold" style="color:#f59e0b">@Model.PendingMaintenance</span>
+                    </div>
+                    <div class="progress" style="height:8px;border-radius:10px">
+                        <div class="progress-bar" role="progressbar"
+                             style="width: @(Model.PendingMaintenance > 0 ? 100 : 0)%;
+                                    background:#f59e0b;border-radius:10px"
+                             aria-valuenow="@Model.PendingMaintenance"
+                             aria-valuemin="0" aria-valuemax="100">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Quick Info Cards -->
+                <div class="row g-2 mt-3">
+                    <div class="col-6">
+                        <div style="background:rgba(34,197,94,0.1);border-radius:12px;padding:1rem;text-align:center">
+                            <i class="fas fa-check-circle" style="color:#22c55e;font-size:1.5rem;margin-bottom:0.5rem;display:inline-block"></i>
+                            <h4 style="color:#22c55e;font-weight:700;margin:0">@Model.PendingMaintenance</h4>
+                            <small style="color:var(--text-muted)">Pending</small>
+                        </div>
+                    </div>
+                    <div class="col-6">
+                        <div style="background:rgba(59,130,246,0.1);border-radius:12px;padding:1rem;text-align:center">
+                            <i class="fas fa-chart-line" style="color:var(--primary);font-size:1.5rem;margin-bottom:0.5rem;display:inline-block"></i>
+                            <h4 style="color:var(--primary);font-weight:700;margin:0">@Model.TotalStudents</h4>
+                            <small style="color:var(--text-muted)">Total Students</small>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Tip Box -->
+                <div class="mt-3 p-3" style="background:var(--primary-light);border-radius:12px;border-left:3px solid var(--primary)">
+                    <small style="color:var(--text-secondary)">
+                        <i class="fas fa-lightbulb me-1" style="color:var(--primary)"></i>
+                        Tip: Regular maintenance checks help prevent major issues.
+                    </small>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    /* Stat Cards */
+    .stat-card {
+        background: var(--bg-card) !important;
+        border: 1px solid var(--border-color) !important;
+        border-radius: 12px;
+        padding: 1.25rem;
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        transition: transform 0.2s, border-color 0.2s;
+    }
+
+        .stat-card:hover {
+            transform: translateY(-2px);
+            border-color: var(--primary) !important;
+        }
+
+    .stat-num {
+        font-family: 'Roboto', sans-serif;
+        font-size: 1.8rem;
+        font-weight: 700;
+        color: var(--text-primary);
+        line-height: 1;
+    }
+
+    .stat-label {
+        font-size: 0.78rem;
+        color: var(--text-muted);
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        margin-top: 0.2rem;
+    }
+
+    /* Action Cards */
+    .action-card {
+        background: var(--bg-elevated) !important;
+        border: 1px solid var(--border-color) !important;
+        border-radius: 12px;
+        padding: 1rem;
+        text-align: center;
+        text-decoration: none;
+        color: var(--text-secondary);
+        display: block;
+        transition: all 0.2s;
+    }
+
+        .action-card:hover {
+            border-color: var(--primary) !important;
+            background: var(--primary-light) !important;
+            transform: translateY(-3px);
+            color: var(--text-primary);
+        }
+
+    .action-card-icon {
+        width: 48px;
+        height: 48px;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.3rem;
+        margin: 0 auto 0.75rem;
+    }
+
+    .action-card h6 {
+        font-weight: 700;
+        color: var(--text-primary);
+        margin-bottom: 0.3rem;
+        font-size: 0.85rem;
+    }
+
+    .action-card p {
+        font-size: 0.7rem;
+        color: var(--text-muted);
+        margin: 0;
+    }
+
+    /* Quick Links */
+    .quick-link {
+        display: flex;
+        align-items: center;
+        padding: 0.75rem;
+        background: var(--bg-elevated);
+        border: 1px solid var(--border-color);
+        border-radius: 8px;
+        text-decoration: none;
+        color: var(--text-primary);
+        transition: all 0.2s;
+    }
+
+        .quick-link:hover {
+            border-color: var(--primary);
+            background: var(--primary-light);
+            transform: translateX(5px);
+        }
+
+        .quick-link span {
+            flex: 1;
+            font-size: 0.85rem;
+        }
+
+    /* Progress Bar */
+    .progress {
+        background: var(--progress-bg) !important;
+    }
+
+    /* Light mode specific overrides */
+    [data-theme="light"] .stat-num {
+        color: #1a1a2e;
+    }
+
+    [data-theme="light"] .action-card h6 {
+        color: #1a1a2e;
+    }
+
+    [data-theme="light"] .badge:first-of-type {
+        background: rgba(59,130,246,0.15) !important;
+        color: #3B82F6 !important;
+    }
+
+    [data-theme="light"] .quick-link {
+        background: #f8f9fa;
+    }
+
+    /* Card height consistency */
+    .h-100 {
+        height: 100%;
+    }
+</style>

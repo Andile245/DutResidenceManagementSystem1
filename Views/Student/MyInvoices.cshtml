@@ -1,0 +1,330 @@
+﻿@model DUTResManagementSystem.ViewModels.StudentInvoiceViewModel
+
+@{
+    ViewBag.Title = "My Invoices";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+@Html.AntiForgeryToken()
+
+<div class="page-header">
+    <div>
+        <h1><i class="fas fa-file-invoice-dollar me-2" style="color:var(--primary)"></i>My Invoices</h1>
+        <div class="breadcrumb-text">View your residence fees and make payments</div>
+    </div>
+</div>
+
+@if (TempData["SuccessMessage"] != null)
+{
+    <div class="alert alert-success alert-dismissible fade show mb-3">
+        <i class="fas fa-check-circle me-2"></i>@TempData["SuccessMessage"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+}
+@if (TempData["ErrorMessage"] != null)
+{
+    <div class="alert alert-danger alert-dismissible fade show mb-3">
+        <i class="fas fa-exclamation-circle me-2"></i>@TempData["ErrorMessage"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+}
+
+<!-- NSFAS Banner -->
+@if (Model.Student?.FundingType == "NSFAS")
+{
+    <div class="alert mb-4" style="background:rgba(59,130,246,0.1);border-color:rgba(59,130,246,0.2);color:#93c5fd">
+        <i class="fas fa-graduation-cap me-2"></i>
+        <strong>NSFAS Funded:</strong> Your residence fees are covered by NSFAS.
+        You do not need to make any payments.
+    </div>
+}
+
+<!-- Summary Cards -->
+<div class="row g-3 mb-4">
+    <div class="col-md-4">
+        <div class="stat-card">
+            <div class="stat-icon blue"><i class="fas fa-file-invoice"></i></div>
+            <div>
+                <div class="stat-num" style="font-size:1.3rem">R @Model.TotalOwed.ToString("N2")</div>
+                <div class="stat-label">Total Invoiced</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="stat-card">
+            <div class="stat-icon green"><i class="fas fa-check-circle"></i></div>
+            <div>
+                <div class="stat-num" style="font-size:1.3rem">R @Model.TotalPaid.ToString("N2")</div>
+                <div class="stat-label">Total Paid</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="stat-card">
+            <div class="stat-icon @(Model.Balance > 0 ? "red" : "green")">
+                <i class="fas fa-@(Model.Balance > 0 ? "exclamation-circle" : "check-circle")"></i>
+            </div>
+            <div>
+                <div class="stat-num" style="font-size:1.3rem;color:@(Model.Balance > 0 ? "#f87171" : "#22c55e")">
+                    R @Model.Balance.ToString("N2")
+                </div>
+                <div class="stat-label">Outstanding Balance</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Invoices -->
+@if (ViewBag.FutureInstallmentsCount != null && (int)ViewBag.FutureInstallmentsCount > 0)
+{
+    <div class="alert mb-3"
+         style="background:rgba(255,255,255,0.04);border-color:rgba(255,255,255,0.08);color:#A0A0B5">
+        <i class="fas fa-calendar-alt me-2" style="color:#eab308"></i>
+        <strong style="color:#E8E8F0">@ViewBag.FutureInstallmentsCount upcoming installment(s)</strong>
+        are not shown yet — they will appear here when their due date arrives each month.
+    </div>
+}
+@if (Model.Invoices.Any())
+{
+    foreach (var invoice in Model.Invoices)
+    {
+        string sc = invoice.Status == "Paid" || invoice.Status == "NSFAS" ? "#22c55e"
+                  : invoice.Status == "Partial" ? "#eab308"
+                  : invoice.Status == "Overdue" ? "#f87171"
+                  : "#A0A0B5";
+        string sb = invoice.Status == "Paid" || invoice.Status == "NSFAS" ? "success"
+                  : invoice.Status == "Partial" ? "warning"
+                  : invoice.Status == "Overdue" ? "danger"
+                  : "secondary";
+        string borderColor = invoice.Status == "Overdue"
+            ? "rgba(239,35,60,0.3)" : "rgba(255,255,255,0.06)";
+
+        <div class="card mb-3" style="border-color:@borderColor!important">
+            <div class="card-header d-flex justify-content-between align-items-center"
+                 style="background:rgba(255,255,255,0.03)!important">
+                <div>
+                    <span style="font-weight:700;color:#E8E8F0">@invoice.InvoiceNumber</span>
+                    @if (invoice.TotalInstallments > 1)
+                    {
+                        <span style="color:#6B6B80;font-size:0.8rem;margin-left:0.5rem">
+                            Installment @invoice.InstallmentNumber of @invoice.TotalInstallments
+                        </span>
+                    }
+                </div>
+                <span class="badge bg-@sb">@invoice.Status</span>
+            </div>
+            <div class="card-body">
+                <div class="row g-3 mb-3">
+                    <div class="col-md-3">
+                        <div style="font-size:0.72rem;color:#6B6B80;text-transform:uppercase;font-weight:600;margin-bottom:0.25rem">Amount</div>
+                        <div style="font-weight:700;color:#E8E8F0">R @invoice.Amount.ToString("N2")</div>
+                    </div>
+                    <div class="col-md-3">
+                        <div style="font-size:0.72rem;color:#6B6B80;text-transform:uppercase;font-weight:600;margin-bottom:0.25rem">Paid</div>
+                        <div style="font-weight:700;color:#22c55e">R @invoice.AmountPaid.ToString("N2")</div>
+                    </div>
+                    <div class="col-md-3">
+                        <div style="font-size:0.72rem;color:#6B6B80;text-transform:uppercase;font-weight:600;margin-bottom:0.25rem">Balance</div>
+                        <div style="font-weight:700;color:@sc">R @invoice.Balance.ToString("N2")</div>
+                    </div>
+                    <div class="col-md-3">
+                        <div style="font-size:0.72rem;color:#6B6B80;text-transform:uppercase;font-weight:600;margin-bottom:0.25rem">Due Date</div>
+                        <div style="color:@(invoice.DueDate < DateTime.Now && invoice.Balance > 0 ? "#f87171" : "#C8C8D8")">
+                            @invoice.DueDate.ToString("dd MMM yyyy")
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Progress bar -->
+                @{
+                    int pct = invoice.Amount > 0
+                        ? (int)((invoice.AmountPaid / invoice.Amount) * 100) : 0;
+                }
+                <div class="progress mb-3" style="height:8px">
+                    <div class="progress-bar bg-@sb" style="width:@pct%"></div>
+                </div>
+
+                <!-- Payment history for this invoice -->
+                @if (invoice.Payments != null && invoice.Payments.Any())
+                {
+                    <div style="font-size:0.78rem;color:#6B6B80;margin-bottom:0.5rem;font-weight:600;text-transform:uppercase;letter-spacing:0.05em">
+                        Payment History
+                    </div>
+                    foreach (var payment in invoice.Payments)
+                    {
+                        <div class="d-flex justify-content-between align-items-center py-1"
+                             style="border-bottom:1px solid rgba(255,255,255,0.04);font-size:0.82rem">
+                            <span style="color:#A0A0B5">
+                                <i class="fas fa-check me-1" style="color:#22c55e"></i>
+                                @payment.PaymentDate.ToString("dd MMM yyyy")
+                                — @payment.PaymentMethod
+                                <span style="color:#6B6B80;font-size:0.72rem">(@payment.ReceiptNumber)</span>
+                            </span>
+                            <span style="color:#22c55e;font-weight:600">+R @payment.AmountPaid.ToString("N2")</span>
+                        </div>
+                    }
+                }
+
+                <!-- Pay Now button — only for self-paying students with outstanding balance -->
+                @if (Model.Student?.FundingType == "Self-Paying" &&
+                     invoice.Balance > 0 &&
+                     invoice.Status != "Paid")
+                {
+                    <div class="mt-3">
+                        <button class="btn btn-primary"
+                                onclick="openPaymentModal(@invoice.InvoiceID, '@invoice.InvoiceNumber', @invoice.Balance)">
+                            <i class="fas fa-credit-card me-2"></i>
+                            Pay R@invoice.Balance.ToString("N2") Online
+                        </button>
+                        <small style="color:#6B6B80;margin-left:0.75rem">
+                            Or visit the DUT admin office to pay by Cash/EFT
+                        </small>
+                    </div>
+                }
+            </div>
+        </div>
+    }
+}
+else
+{
+    <div class="card">
+        <div class="card-body text-center py-5" style="color:#6B6B80">
+            <i class="fas fa-file-invoice-dollar fa-3x mb-3"></i>
+            <h5>No invoices yet</h5>
+            <p>Your residence fee invoices will appear here once generated by the admin.</p>
+        </div>
+    </div>
+}
+
+<!-- Stripe Payment Modal -->
+<div class="modal fade" id="paymentModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="fas fa-credit-card me-2" style="color:var(--primary)"></i>
+                    Pay Online
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div id="paymentSummary" class="mb-3 p-3"
+                     style="background:rgba(255,255,255,0.04);border-radius:8px">
+                </div>
+
+                <!-- Stripe Card Element will render here -->
+                <div class="mb-3">
+                    <label class="form-label">Card Details</label>
+                    <div id="card-element"
+                         style="background:var(--dark3);border:1px solid rgba(255,255,255,0.1);
+                                border-radius:8px;padding:0.75rem;color:#E8E8F0">
+                    </div>
+                    <div id="card-errors" style="color:#f87171;font-size:0.82rem;margin-top:0.5rem"></div>
+                </div>
+
+                <div style="font-size:0.75rem;color:#6B6B80;text-align:center">
+                    <i class="fas fa-lock me-1" style="color:#22c55e"></i>
+                    Secured by Stripe. Your card details are never stored on our servers.
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" id="payBtn" class="btn btn-primary" onclick="submitPayment()">
+                    <i class="fas fa-credit-card me-2"></i>Pay Now
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Hidden form to confirm Stripe payment to server -->
+@using (Html.BeginForm("ConfirmStripePayment", "Student", FormMethod.Post, new { id = "confirmForm" }))
+{
+    @Html.AntiForgeryToken()
+    <input type="hidden" id="hiddenInvoiceId" name="invoiceId" />
+    <input type="hidden" id="hiddenPaymentIntentId" name="paymentIntentId" />
+}
+
+@section Scripts {
+    <!-- Stripe.js — load from Stripe's CDN (never self-host this) -->
+    <script src="https://js.stripe.com/v3/"></script>
+    <script>
+        var stripe   = Stripe('@Model.StripePublishableKey');
+        var elements = stripe.elements();
+        var card     = elements.create('card', {
+            style: {
+                base: {
+                    color: '#E8E8F0',
+                    fontFamily: '"Open Sans", sans-serif',
+                    fontSize: '16px',
+                    '::placeholder': { color: '#6B6B80' }
+                },
+                invalid: { color: '#f87171' }
+            }
+        });
+        card.mount('#card-element');
+
+        card.on('change', function (event) {
+            document.getElementById('card-errors').textContent =
+                event.error ? event.error.message : '';
+        });
+
+        var currentInvoiceId = null;
+
+        function openPaymentModal(invoiceId, invoiceNumber, balance) {
+            currentInvoiceId = invoiceId;
+            document.getElementById('paymentSummary').innerHTML =
+                '<div style="font-size:0.85rem;color:#A0A0B5">Invoice: <strong style="color:#E8E8F0">' +
+                invoiceNumber + '</strong></div>' +
+                '<div style="font-size:1.2rem;font-weight:700;color:#22c55e;margin-top:0.25rem">' +
+                'R' + balance.toFixed(2) + '</div>';
+            new bootstrap.Modal(document.getElementById('paymentModal')).show();
+        }
+
+        function submitPayment() {
+            var btn = document.getElementById('payBtn');
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Processing...';
+
+            // Step 1: Ask our server to create a PaymentIntent
+            $.ajax({
+                url: '@Url.Action("CreatePaymentIntent", "Student")',
+                type: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify({ invoiceId: currentInvoiceId }),
+                success: function (response) {
+                    if (response.error) {
+                        document.getElementById('card-errors').textContent = response.error;
+                        btn.disabled = false;
+                        btn.innerHTML = '<i class="fas fa-credit-card me-2"></i>Pay Now';
+                        return;
+                    }
+
+                    // Step 2: Confirm the card payment with Stripe
+                    stripe.confirmCardPayment(response.clientSecret, {
+                        payment_method: { card: card }
+                    }).then(function (result) {
+                        if (result.error) {
+                            document.getElementById('card-errors').textContent =
+                                result.error.message;
+                            btn.disabled = false;
+                            btn.innerHTML = '<i class="fas fa-credit-card me-2"></i>Pay Now';
+                        } else if (result.paymentIntent.status === 'succeeded') {
+                            // Step 3: Tell our server the payment succeeded
+                            document.getElementById('hiddenInvoiceId').value = currentInvoiceId;
+                            document.getElementById('hiddenPaymentIntentId').value =
+                                result.paymentIntent.id;
+                            document.getElementById('confirmForm').submit();
+                        }
+                    });
+                },
+                error: function () {
+                    document.getElementById('card-errors').textContent =
+                        'Could not connect to payment server. Please try again.';
+                    btn.disabled = false;
+                    btn.innerHTML = '<i class="fas fa-credit-card me-2"></i>Pay Now';
+                }
+            });
+        }
+    </script>
+}

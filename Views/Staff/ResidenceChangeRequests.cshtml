@@ -1,0 +1,454 @@
+﻿@model List<DUTResManagementSystem.Models.ResidenceChangeRequest>
+
+@{
+    ViewBag.Title = "Residence Change Requests";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+@Html.AntiForgeryToken()
+
+<div class="page-header">
+    <div>
+        <h1><i class="fas fa-exchange-alt me-2" style="color:var(--primary)"></i>Residence Change Requests</h1>
+        <div class="breadcrumb-text">Review and action student residence transfer requests</div>
+    </div>
+</div>
+
+@if (TempData["SuccessMessage"] != null)
+{
+    <div class="alert alert-success alert-dismissible fade show mb-3">
+        <i class="fas fa-check-circle me-2"></i>@TempData["SuccessMessage"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+}
+@if (TempData["ErrorMessage"] != null)
+{
+    <div class="alert alert-danger alert-dismissible fade show mb-3">
+        <i class="fas fa-exclamation-circle me-2"></i>@TempData["ErrorMessage"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+}
+
+<!-- Stats -->
+<div class="row g-3 mb-4">
+    <div class="col-md-4">
+        <div class="stat-card">
+            <div class="stat-icon" style="background:rgba(245,158,11,0.15);color:#f59e0b">
+                <i class="fas fa-clock"></i>
+            </div>
+            <div>
+                <div class="stat-num">@ViewBag.PendingCount</div>
+                <div class="stat-label">Pending Review</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="stat-card">
+            <div class="stat-icon" style="background:rgba(34,197,94,0.15);color:#22c55e">
+                <i class="fas fa-check-circle"></i>
+            </div>
+            <div>
+                <div class="stat-num">@ViewBag.ApprovedCount</div>
+                <div class="stat-label">Approved</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="stat-card">
+            <div class="stat-icon" style="background:rgba(239,68,68,0.15);color:#ef4444">
+                <i class="fas fa-times-circle"></i>
+            </div>
+            <div>
+                <div class="stat-num">@ViewBag.DeclinedCount</div>
+                <div class="stat-label">Declined</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- How it works info -->
+<div class="alert alert-info mb-4">
+    <i class="fas fa-info-circle me-2"></i>
+    <strong>How approvals work:</strong>
+    When you <strong>approve</strong> a request, the student is automatically deallocated
+    from their current residence <em>and</em> their room (room is freed up).
+    You can then allocate them to a new residence from the
+    <a href="@Url.Action("StudentAllocation","Staff")" style="color:var(--primary);text-decoration:none;font-weight:600">Student Allocation</a> page.
+    If you <strong>decline</strong>, the student remains in their current residence — nothing changes.
+</div>
+
+@if (Model.Any())
+{
+    foreach (var request in Model)
+    {
+        string bc = request.Status == "Approved" ? "success"
+                  : request.Status == "Declined" ? "danger"
+                  : "warning";
+        string borderHex = request.Status == "Approved" ? "rgba(34,197,94,0.25)"
+                         : request.Status == "Declined" ? "rgba(239,68,68,0.25)"
+                         : "rgba(245,158,11,0.3)";
+        string statusColor = request.Status == "Approved" ? "#22c55e"
+                           : request.Status == "Declined" ? "#ef4444" : "#f59e0b";
+        string statusBg = request.Status == "Approved" ? "rgba(34,197,94,0.15)"
+                        : request.Status == "Declined" ? "rgba(239,68,68,0.15)"
+                        : "rgba(245,158,11,0.15)";
+        bool isPending = request.Status == "Pending";
+
+        string studentName = request.Student != null
+            ? request.Student.FirstName + " " + request.Student.LastName
+            : "Unknown Student";
+        string studentNumber = request.Student?.StudentNumber ?? "";
+        string residenceName = request.CurrentResidence?.Name ?? "Unknown Residence";
+        string currentRoom = request.Student?.Room != null
+            ? "Room " + request.Student.Room.RoomNumber + " (" + request.Student.Room.RoomType + ")"
+            : "No room assigned";
+
+        <div class="card mb-4" style="border-color:@borderHex!important">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <div>
+                    <div style="font-weight:700;color:var(--text-primary)">
+                        <i class="fas fa-exchange-alt me-2" style="color:@statusColor"></i>
+                        Request #@request.RequestID —
+                        <strong>@studentName</strong>
+                        @if (!string.IsNullOrEmpty(studentNumber))
+                        {
+                            <small style="color:var(--text-muted);font-weight:400"> (@studentNumber)</small>
+                        }
+                    </div>
+                    <div style="font-size:0.75rem;color:var(--text-muted);margin-top:0.2rem">
+                        Submitted: @request.DateRequested.ToString("dd MMM yyyy HH:mm")
+                    </div>
+                </div>
+                <span class="badge" style="background:@statusBg;color:@statusColor;border:1px solid @statusColor;font-size:0.82rem;padding:0.4rem 0.75rem">
+                    @request.Status
+                </span>
+            </div>
+            <div class="card-body">
+                <!-- Request details -->
+                <div class="row g-3 mb-3">
+                    <div class="col-md-6">
+                        <div style="font-size:0.72rem;color:var(--text-muted);text-transform:uppercase;
+                                    font-weight:600;margin-bottom:0.25rem">Current Residence</div>
+                        <div style="font-weight:700;color:var(--text-primary)">@residenceName</div>
+                    </div>
+                    <div class="col-md-6">
+                        <div style="font-size:0.72rem;color:var(--text-muted);text-transform:uppercase;
+                                    font-weight:600;margin-bottom:0.25rem">Current Room</div>
+                        <div style="color:var(--text-secondary)">@currentRoom</div>
+                    </div>
+                </div>
+
+                <div class="mb-3">
+                    <div style="font-size:0.72rem;color:var(--text-muted);text-transform:uppercase;
+                                font-weight:600;margin-bottom:0.25rem">Reason from Student</div>
+                    <div style="background:var(--bg-elevated);border-radius:8px;
+                                padding:0.75rem;color:var(--text-secondary);font-size:0.88rem;line-height:1.6;
+                                border:1px solid var(--border-light)">
+                        @request.Reason
+                    </div>
+                </div>
+
+                @if (!string.IsNullOrEmpty(request.DocumentPath))
+                {
+                    <div class="mb-3">
+                        <div style="font-size:0.72rem;color:var(--text-muted);text-transform:uppercase;
+                                    font-weight:600;margin-bottom:0.25rem">Supporting Document</div>
+                        <a href="@request.DocumentPath" target="_blank" class="btn btn-sm btn-outline-primary">
+                            <i class="fas fa-file me-1"></i>View Document
+                        </a>
+                    </div>
+                }
+
+                <!-- Already reviewed -->
+                @if (!isPending)
+                {
+                    <div class="row g-3 mt-1"
+                         style="background:var(--bg-elevated);border-radius:10px;
+                                padding:0.75rem;border:1px solid var(--border-light)">
+                        @if (!string.IsNullOrEmpty(request.AdminFeedback))
+                        {
+                            <div class="col-md-8">
+                                <div style="font-size:0.72rem;color:var(--text-muted);text-transform:uppercase;
+                                            font-weight:600;margin-bottom:0.25rem">Your Feedback</div>
+                                <div class="alert" style="background:@statusBg;border:1px solid @statusColor;color:var(--text-primary);padding:0.75rem;border-radius:8px;font-size:0.85rem">
+                                    @request.AdminFeedback
+                                </div>
+                            </div>
+                        }
+                        <div class="col-md-4">
+                            <div style="font-size:0.72rem;color:var(--text-muted);text-transform:uppercase;
+                                        font-weight:600;margin-bottom:0.25rem">Reviewed On</div>
+                            <div style="color:var(--text-secondary);font-size:0.85rem">
+                                @request.DateReviewed
+                            </div>
+                            @if (request.ReviewedBy != null)
+                            {
+                                <div style="font-size:0.75rem;color:var(--text-muted);margin-top:0.2rem">
+                                    by @request.ReviewedBy.FirstName @request.ReviewedBy.LastName
+                                </div>
+                            }
+                        </div>
+                    </div>
+                }
+
+                <!-- Review form — pending only -->
+                @if (isPending)
+                {
+                    <hr style="border-color:var(--border-light);margin:1.25rem 0" />
+                    <h6 style="color:var(--text-primary);margin-bottom:1rem;font-weight:700">
+                        <i class="fas fa-gavel me-2" style="color:var(--primary)"></i>Review This Request
+                    </h6>
+                    using (Html.BeginForm("ReviewResidenceChangeRequest", "Staff", FormMethod.Post))
+                    {
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="requestId" value="@request.RequestID" />
+
+                        <div class="mb-3">
+                            <label class="form-label">
+                                Feedback to Student
+                                <span style="color:var(--text-muted);font-weight:400">(Recommended)</span>
+                            </label>
+                            <textarea name="adminFeedback" class="form-control" rows="3"
+                                      placeholder="Explain your decision to the student..."></textarea>
+                            <div class="form-text">
+                                <strong>If approving:</strong> @studentName will be deallocated from
+                                @residenceName @(request.Student?.Room != null ? "and " + currentRoom : "")
+                                and will appear in the unallocated list on Student Allocation.
+                                <strong>If declining:</strong> the student stays in @residenceName.
+                            </div>
+                        </div>
+
+                        <div class="d-flex gap-2">
+                            <button type="submit" name="decision" value="Approved"
+                                    class="btn btn-success"
+                                    onclick="return confirm('Approve this request? @studentName will be deallocated from @residenceName@(request.Student?.Room != null ? " and " + currentRoom : "").')">
+                                <i class="fas fa-check me-2"></i>Approve
+                            </button>
+                            <button type="submit" name="decision" value="Declined"
+                                    class="btn btn-danger"
+                                    onclick="return confirm('Decline this request? @studentName will remain in @residenceName.')">
+                                <i class="fas fa-times me-2"></i>Decline
+                            </button>
+                        </div>
+                    }
+                }
+            </div>
+        </div>
+    }
+}
+else
+{
+    <div class="card">
+        <div class="card-body text-center py-5" style="color:var(--text-muted)">
+            <i class="fas fa-exchange-alt fa-3x mb-3"></i>
+            <h5>No residence change requests</h5>
+            <p>There are no residence change requests at this time.</p>
+        </div>
+    </div>
+}
+
+<style>
+    /* Stat Cards */
+    .stat-card {
+        background: var(--bg-card) !important;
+        border: 1px solid var(--border-color) !important;
+        border-radius: 12px;
+        padding: 1.25rem;
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        transition: transform 0.2s, border-color 0.2s;
+    }
+
+        .stat-card:hover {
+            transform: translateY(-2px);
+            border-color: var(--primary) !important;
+        }
+
+    .stat-num {
+        font-family: 'Roboto', sans-serif;
+        font-size: 1.8rem;
+        font-weight: 700;
+        color: var(--text-primary);
+        line-height: 1;
+    }
+
+    .stat-label {
+        font-size: 0.78rem;
+        color: var(--text-muted);
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        margin-top: 0.2rem;
+    }
+
+    .stat-icon {
+        width: 52px;
+        height: 52px;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.4rem;
+        flex-shrink: 0;
+    }
+
+    /* Card */
+    .card {
+        background: var(--bg-card) !important;
+        border: 1px solid var(--border-color) !important;
+        border-radius: 12px !important;
+    }
+
+    .card-header {
+        background: var(--card-header-bg) !important;
+        border-bottom: 1px solid var(--border-light) !important;
+        border-radius: 12px 12px 0 0 !important;
+        padding: 1rem 1.25rem;
+        font-weight: 600;
+        color: var(--text-primary);
+    }
+
+    .card-body {
+        background: var(--bg-card) !important;
+    }
+
+    /* Page Header */
+    .page-header {
+        margin-bottom: 1.5rem;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 1rem;
+    }
+
+        .page-header h1 {
+            font-family: 'Roboto', sans-serif;
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--text-primary);
+            margin: 0;
+        }
+
+    .breadcrumb-text {
+        font-size: 0.85rem;
+        color: var(--text-muted);
+        margin-top: 0.25rem;
+    }
+
+    /* Form Elements */
+    .form-control {
+        background: var(--bg-input) !important;
+        border: 1px solid var(--border-color) !important;
+        color: var(--text-primary) !important;
+        border-radius: 8px;
+    }
+
+        .form-control:focus {
+            border-color: var(--primary) !important;
+            box-shadow: 0 0 0 3px rgba(59,130,246,0.15) !important;
+        }
+
+    .form-label {
+        color: var(--text-primary);
+        font-size: 0.85rem;
+        font-weight: 600;
+        margin-bottom: 0.5rem;
+    }
+
+    .form-text {
+        color: var(--text-muted-light) !important;
+        font-size: 0.75rem;
+        margin-top: 0.25rem;
+    }
+
+    /* Buttons */
+    .btn-success {
+        background: #22c55e !important;
+        border-color: #22c55e !important;
+    }
+
+        .btn-success:hover {
+            background: #16a34a !important;
+            border-color: #16a34a !important;
+            transform: translateY(-1px);
+        }
+
+    .btn-danger {
+        background: #ef4444 !important;
+        border-color: #ef4444 !important;
+    }
+
+        .btn-danger:hover {
+            background: #dc2626 !important;
+            border-color: #dc2626 !important;
+            transform: translateY(-1px);
+        }
+
+    .btn-outline-primary {
+        color: var(--primary) !important;
+        border-color: var(--primary) !important;
+    }
+
+        .btn-outline-primary:hover {
+            background: var(--primary) !important;
+            color: white !important;
+        }
+
+    /* Alerts */
+    .alert-info {
+        background: rgba(59,130,246,0.1) !important;
+        border: 1px solid rgba(59,130,246,0.2) !important;
+        color: var(--text-primary) !important;
+        border-radius: 12px;
+    }
+
+    [data-theme="light"] .alert-info {
+        background: #d1ecf1 !important;
+        color: #0c5460 !important;
+        border-color: #bee5eb !important;
+    }
+
+    .alert-success {
+        background: rgba(34,197,94,0.1) !important;
+        border: 1px solid rgba(34,197,94,0.2) !important;
+        color: var(--text-primary) !important;
+        border-radius: 12px;
+    }
+
+    [data-theme="light"] .alert-success {
+        background: #d4edda !important;
+        color: #155724 !important;
+        border-color: #c3e6cb !important;
+    }
+
+    .alert-danger {
+        background: rgba(239,68,68,0.1) !important;
+        border: 1px solid rgba(239,68,68,0.2) !important;
+        color: #ef4444 !important;
+        border-radius: 12px;
+    }
+
+    [data-theme="light"] .alert-danger {
+        background: #f8d7da !important;
+        color: #721c24 !important;
+        border-color: #f5c6cb !important;
+    }
+
+    /* Light mode overrides */
+    [data-theme="light"] .stat-num {
+        color: #1a1a2e;
+    }
+
+    [data-theme="light"] .card-header {
+        color: #1a1a2e;
+    }
+
+        [data-theme="light"] .card-header strong {
+            color: #1a1a2e;
+        }
+
+        [data-theme="light"] .card-header small {
+            color: #6c757d !important;
+        }
+</style>

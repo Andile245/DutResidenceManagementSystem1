@@ -1,0 +1,1015 @@
+@model DUTResManagementSystem.ViewModels.VisitorCheckInViewModel
+
+@{
+    ViewBag.Title = "Scan Visitor";
+}
+
+<div class="container-fluid py-4">
+    <div class="page-header">
+        <div>
+            <h1><i class="fas fa-camera me-2" style="color: var(--primary);"></i>Visitor Identification Scan</h1>
+            <div class="breadcrumb-text">Scan the visitor's card barcode, capture their details, then generate a visitor QR pass</div>
+        </div>
+        <a href="@Url.Action("Dashboard", "Visitor")" class="btn btn-secondary">
+            <i class="fas fa-arrow-left me-2"></i>Back to Dashboard
+        </a>
+    </div>
+
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show">
+            <i class="fas fa-exclamation-circle me-2"></i>@TempData["ErrorMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    <div class="row g-4">
+        <div class="col-lg-8">
+            <div class="card">
+                <div class="card-header">
+                    <i class="fas fa-user-graduate me-2" style="color: var(--primary);"></i>
+                    Card Scan Details
+                </div>
+                <div class="card-body">
+                    @using (Html.BeginForm("CheckIn", "Visitor", FormMethod.Post, new { id = "visitorScanForm" }))
+                    {
+                        @Html.AntiForgeryToken()
+                        @Html.ValidationSummary(true, "", new { @class = "alert alert-danger" })
+
+                        <div class="row g-3">
+                            <div class="col-md-12">
+                                <div class="alert alert-info">
+                                    <i class="fas fa-info-circle me-2"></i>
+                                    Choose the student being visited, then use the camera to scan the visitor's ID, student, or licence card barcode. The system captures the details and generates a visitor QR pass.
+                                </div>
+                            </div>
+
+                            <div class="col-md-12">
+                                @Html.LabelFor(m => m.Visitor.StudentID, new { @class = "form-label" })
+                                @Html.DropDownListFor(m => m.Visitor.StudentID, Model.Students, "Select Student to Visit", new { @class = "form-select" })
+                                @Html.ValidationMessageFor(m => m.Visitor.StudentID, "", new { @class = "text-danger small" })
+                            </div>
+
+                            <div class="col-md-12">
+                                <label class="form-label">
+                                    <i class="fas fa-camera me-1"></i>Card Barcode Camera Scanner
+                                </label>
+                                <div class="camera-scanner">
+                                    <video id="cardScannerVideo" playsinline muted></video>
+                                    <canvas id="cardScannerCanvas" class="d-none"></canvas>
+                                    <div class="camera-frame">
+                                        <span></span>
+                                        <span></span>
+                                        <span></span>
+                                        <span></span>
+                                    </div>
+                                    <div class="camera-placeholder" id="cameraPlaceholder">
+                                        <i class="fas fa-camera fa-2x mb-2"></i>
+                                        <div>Start camera and point it at the card barcode</div>
+                                    </div>
+                                </div>
+                                <div class="camera-actions mt-3">
+                                    <button type="button" class="btn btn-primary" id="startCameraButton">
+                                        <i class="fas fa-video me-2"></i>Start Camera
+                                    </button>
+                                    <button type="button" class="btn btn-secondary" id="stopCameraButton" disabled>
+                                        <i class="fas fa-video-slash me-2"></i>Stop
+                                    </button>
+                                </div>
+                                <div class="camera-controls mt-3">
+                                    <div>
+                                        <label class="form-label" for="cameraSelect">Camera</label>
+                                        <select class="form-select" id="cameraSelect">
+                                            <option value="">Auto select best camera</option>
+                                        </select>
+                                    </div>
+                                    <div class="d-none" id="zoomControl">
+                                        <label class="form-label" for="cameraZoom">Zoom</label>
+                                        <input type="range" class="form-range" id="cameraZoom" min="1" max="1" step="0.1" value="1" />
+                                    </div>
+                                </div>
+                                <div class="scanner-status mt-2" id="scannerStatus">
+                                    Camera scanner is ready. A USB barcode/QR scanner can also be used directly on this page.
+                                </div>
+                            </div>
+
+                            @Html.HiddenFor(m => m.ScannedDocumentData, new { id = "ScannedDocumentData" })
+                            <input type="text" id="HardwareScannerInput" class="scanner-capture-input" autocomplete="off" inputmode="none" aria-label="Hardware scanner capture" />
+                            @Html.ValidationMessageFor(m => m.ScannedDocumentData, "", new { @class = "text-danger small" })
+
+                            <div class="col-md-12">
+                                <div class="captured-panel" id="capturedPanel" aria-live="polite">
+                                    <div class="captured-empty" id="capturedEmpty">
+                                        <i class="fas fa-id-card me-2"></i>Waiting for card barcode scan
+                                    </div>
+                                    <div class="captured-details d-none" id="capturedDetails">
+                                        <div class="captured-status">
+                                            <span><i class="fas fa-check-circle me-2"></i>Details captured</span>
+                                            <span class="captured-badge" id="capturedValidity">Ready</span>
+                                        </div>
+                                        <div class="captured-grid">
+                                            <div>
+                                                <span>Visitor</span>
+                                                <strong id="capturedName">-</strong>
+                                            </div>
+                                            <div>
+                                                <span>Surname</span>
+                                                <strong id="capturedSurname">-</strong>
+                                            </div>
+                                            <div>
+                                                <span>Document</span>
+                                                <strong id="capturedDocument">-</strong>
+                                            </div>
+                                            <div>
+                                                <span>Age</span>
+                                                <strong id="capturedAge">-</strong>
+                                            </div>
+                                            <div>
+                                                <span>Date of Birth</span>
+                                                <strong id="capturedBirthDate">-</strong>
+                                            </div>
+                                            <div>
+                                                <span>Gender</span>
+                                                <strong id="capturedGender">-</strong>
+                                            </div>
+                                            <div>
+                                                <span>Citizenship</span>
+                                                <strong id="capturedCitizenship">-</strong>
+                                            </div>
+                                            <div>
+                                                <span>Document Type</span>
+                                                <strong id="capturedType">-</strong>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mt-4 d-flex gap-2 justify-content-end">
+                            <a href="@Url.Action("Dashboard", "Visitor")" class="btn btn-secondary">
+                                <i class="fas fa-times me-2"></i>Cancel
+                            </a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-qrcode me-2"></i>Generate Visitor QR Pass
+                            </button>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-4">
+            <div class="card">
+                <div class="card-header">
+                    <i class="fas fa-id-card me-2" style="color: var(--primary);"></i>
+                    Scanner Workflow
+                </div>
+                <div class="card-body">
+                    <div class="scan-step">
+                        <div class="scan-step-icon"><i class="fas fa-user-graduate"></i></div>
+                        <div>
+                            <strong>Select host</strong>
+                            <div class="small text-muted">Choose the student the visitor is seeing.</div>
+                        </div>
+                    </div>
+                    <div class="scan-step">
+                        <div class="scan-step-icon"><i class="fas fa-barcode"></i></div>
+                        <div>
+                            <strong>Camera scans card barcode</strong>
+                            <div class="small text-muted">The visitor brings an ID card, student card, or licence card with a barcode.</div>
+                        </div>
+                    </div>
+                    <div class="scan-step">
+                        <div class="scan-step-icon"><i class="fas fa-qrcode"></i></div>
+                        <div>
+                            <strong>Visitor QR pass generated</strong>
+                            <div class="small text-muted">The visitor scans this generated code at entry and exit.</div>
+                        </div>
+                    </div>
+                    <div class="scan-step">
+                        <div class="scan-step-icon"><i class="fas fa-sign-in-alt"></i></div>
+                        <div>
+                            <strong>Status updates automatically</strong>
+                            <div class="small text-muted">First visitor-pass scan logs inside and time in; second scan logs exit and time out.</div>
+                        </div>
+                    </div>
+
+                    <div class="alert alert-warning mt-3 mb-0">
+                        <i class="fas fa-clock me-2"></i>
+                        <strong>Important:</strong> New entries are only allowed from 08:00 to 00:00. Exit scans are still accepted after hours.
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="@Url.Content("https://cdn.jsdelivr.net/npm/@zxing/library@0.21.3/umd/index.min.js")"></script>
+    <script>
+        if (!window.ZXing) {
+            document.write('<script src="@Url.Content("https://unpkg.com/@zxing/library@0.21.3/umd/index.min.js")"><\/script>');
+        }
+    </script>
+    <script>
+        (function () {
+            const form = document.getElementById('visitorScanForm');
+            const scanInput = document.getElementById('ScannedDocumentData');
+            const hardwareScannerInput = document.getElementById('HardwareScannerInput');
+            const studentSelect = document.getElementById('Visitor_StudentID');
+            const tokenInput = form ? form.querySelector('input[name="__RequestVerificationToken"]') : null;
+            const video = document.getElementById('cardScannerVideo');
+            const cameraPlaceholder = document.getElementById('cameraPlaceholder');
+            const startCameraButton = document.getElementById('startCameraButton');
+            const stopCameraButton = document.getElementById('stopCameraButton');
+            const cameraSelect = document.getElementById('cameraSelect');
+            const zoomControl = document.getElementById('zoomControl');
+            const cameraZoom = document.getElementById('cameraZoom');
+            const scannerStatus = document.getElementById('scannerStatus');
+            const capturedEmpty = document.getElementById('capturedEmpty');
+            const capturedDetails = document.getElementById('capturedDetails');
+            const capturedValidity = document.getElementById('capturedValidity');
+            const fields = {
+                name: document.getElementById('capturedName'),
+                surname: document.getElementById('capturedSurname'),
+                document: document.getElementById('capturedDocument'),
+                age: document.getElementById('capturedAge'),
+                birthDate: document.getElementById('capturedBirthDate'),
+                gender: document.getElementById('capturedGender'),
+                citizenship: document.getElementById('capturedCitizenship'),
+                type: document.getElementById('capturedType')
+            };
+            let previewTimer = null;
+            let isSubmitting = false;
+            let codeReader = null;
+            let lastScannedValue = '';
+            let lastScanAt = 0;
+            let pendingAutoSubmit = false;
+            let pendingOneDimensionalValue = null;
+            let pendingOneDimensionalTimer = null;
+            let activeTrack = null;
+            let lastDecodeHintAt = 0;
+            let hardwareScannerBuffer = '';
+            let hardwareScannerLastKeyAt = 0;
+            let hardwareScannerFlushTimer = null;
+            let hardwareScannerInputTimer = null;
+
+            function setText(element, value) {
+                if (element) {
+                    element.textContent = value || '-';
+                }
+            }
+
+            function showCapturedDetails(data) {
+                if (!data || !data.hasData || !data.documentNumber) {
+                    capturedEmpty.classList.remove('d-none');
+                    capturedDetails.classList.add('d-none');
+                    return;
+                }
+
+                capturedEmpty.classList.add('d-none');
+                capturedDetails.classList.remove('d-none');
+                setText(fields.name, data.fullName);
+                setText(fields.surname, data.lastName);
+                setText(fields.document, data.documentNumber);
+                setText(fields.age, data.age);
+                setText(fields.birthDate, data.dateOfBirth);
+                setText(fields.gender, data.gender);
+                setText(fields.citizenship, data.citizenship);
+                setText(fields.type, data.documentType);
+
+                capturedValidity.textContent = data.documentType === 'South African ID'
+                    ? (data.isValidSouthAfricanId ? 'Valid SA ID' : 'Check ID')
+                    : 'Captured';
+                capturedValidity.classList.toggle('captured-badge-warning', data.documentType === 'South African ID' && !data.isValidSouthAfricanId);
+
+                if (pendingAutoSubmit) {
+                    pendingAutoSubmit = false;
+                    if (studentSelect && studentSelect.value) {
+                        setScannerStatus('Details captured. Generating visitor QR pass now.', 'success');
+                        window.setTimeout(submitScan, 450);
+                    } else {
+                        setScannerStatus('Details captured. Select the student host to generate the visitor QR pass.', 'warning');
+                        if (studentSelect) {
+                            studentSelect.focus();
+                            studentSelect.classList.add('is-invalid');
+                        }
+                    }
+                }
+            }
+
+            function refreshPreview() {
+                if (!scanInput || !tokenInput) {
+                    return;
+                }
+
+                const scannedValue = scanInput.value.trim();
+                if (!scannedValue) {
+                    showCapturedDetails(null);
+                    return;
+                }
+
+                const payload = new FormData();
+                payload.append('__RequestVerificationToken', tokenInput.value);
+                payload.append('scannedDocumentData', scannedValue);
+
+                fetch('@Url.Action("PreviewScannedDocument", "Visitor")', {
+                    method: 'POST',
+                    body: payload,
+                    credentials: 'same-origin'
+                })
+                    .then(response => response.ok ? response.json() : null)
+                    .then(showCapturedDetails)
+                    .catch(() => showCapturedDetails(null));
+            }
+
+            function schedulePreview() {
+                window.clearTimeout(previewTimer);
+                previewTimer = window.setTimeout(refreshPreview, 120);
+            }
+
+            function setScannerStatus(message, type) {
+                if (!scannerStatus) {
+                    return;
+                }
+
+                scannerStatus.textContent = message;
+                scannerStatus.classList.remove('scanner-status-success', 'scanner-status-warning', 'scanner-status-danger');
+                if (type) {
+                    scannerStatus.classList.add('scanner-status-' + type);
+                }
+            }
+
+            function setCameraActive(isActive) {
+                if (startCameraButton) {
+                    startCameraButton.disabled = isActive;
+                }
+                if (stopCameraButton) {
+                    stopCameraButton.disabled = !isActive;
+                }
+                if (cameraPlaceholder) {
+                    cameraPlaceholder.classList.toggle('d-none', isActive);
+                }
+            }
+
+            async function loadCameras() {
+                if (!navigator.mediaDevices || !navigator.mediaDevices.enumerateDevices || !cameraSelect) {
+                    return;
+                }
+
+                try {
+                    const devices = await navigator.mediaDevices.enumerateDevices();
+                    const videoDevices = devices.filter(device => device.kind === 'videoinput');
+                    const currentValue = cameraSelect.value;
+                    cameraSelect.innerHTML = '<option value="">Auto select best camera</option>';
+
+                    videoDevices.forEach(function (device, index) {
+                        const option = document.createElement('option');
+                        option.value = device.deviceId;
+                        option.textContent = device.label || ('Camera ' + (index + 1));
+                        cameraSelect.appendChild(option);
+                    });
+
+                    if (currentValue && videoDevices.some(device => device.deviceId === currentValue)) {
+                        cameraSelect.value = currentValue;
+                    }
+                } catch (error) {
+                }
+            }
+
+            function getVideoConstraints() {
+                const selectedCameraId = cameraSelect ? cameraSelect.value : '';
+                const baseConstraints = {
+                    width: { ideal: 1920 },
+                    height: { ideal: 1080 },
+                    frameRate: { ideal: 30 },
+                    focusMode: { ideal: 'continuous' },
+                    exposureMode: { ideal: 'continuous' }
+                };
+
+                if (selectedCameraId) {
+                    baseConstraints.deviceId = { exact: selectedCameraId };
+                } else {
+                    baseConstraints.facingMode = { ideal: 'environment' };
+                }
+
+                return {
+                    video: baseConstraints,
+                    audio: false
+                };
+            }
+
+            function configureActiveCameraControls() {
+                activeTrack = null;
+
+                if (!video || !video.srcObject) {
+                    if (zoomControl) {
+                        zoomControl.classList.add('d-none');
+                    }
+                    return;
+                }
+
+                const tracks = video.srcObject.getVideoTracks ? video.srcObject.getVideoTracks() : [];
+                activeTrack = tracks.length ? tracks[0] : null;
+
+                if (!activeTrack || !activeTrack.getCapabilities || !cameraZoom || !zoomControl) {
+                    if (zoomControl) {
+                        zoomControl.classList.add('d-none');
+                    }
+                    return;
+                }
+
+                const capabilities = activeTrack.getCapabilities();
+                if (!capabilities.zoom) {
+                    zoomControl.classList.add('d-none');
+                    return;
+                }
+
+                cameraZoom.min = capabilities.zoom.min || 1;
+                cameraZoom.max = capabilities.zoom.max || 1;
+                cameraZoom.step = capabilities.zoom.step || 0.1;
+
+                const preferredZoom = Math.min(Number(cameraZoom.max), Math.max(Number(cameraZoom.min), 2));
+                cameraZoom.value = preferredZoom;
+                zoomControl.classList.remove('d-none');
+                applyZoom(preferredZoom);
+            }
+
+            function applyZoom(value) {
+                if (!activeTrack || !activeTrack.applyConstraints) {
+                    return;
+                }
+
+                activeTrack.applyConstraints({
+                    advanced: [{ zoom: Number(value) }]
+                }).catch(function () {
+                });
+            }
+
+            function clearHardwareScannerBuffer() {
+                hardwareScannerBuffer = '';
+                hardwareScannerLastKeyAt = 0;
+                if (hardwareScannerFlushTimer) {
+                    window.clearTimeout(hardwareScannerFlushTimer);
+                    hardwareScannerFlushTimer = null;
+                }
+            }
+
+            function focusHardwareScannerInput() {
+                if (!hardwareScannerInput) {
+                    return;
+                }
+
+                window.setTimeout(function () {
+                    hardwareScannerInput.focus({ preventScroll: true });
+                }, 80);
+            }
+
+            function flushHardwareScannerBuffer() {
+                const scannedValue = hardwareScannerBuffer.trim();
+                clearHardwareScannerBuffer();
+
+                if (scannedValue.length >= 4) {
+                    setScannerStatus('Scanner code received. Details are being read from the scan.', 'success');
+                    captureScannedValue(scannedValue);
+                }
+            }
+
+            function flushHardwareScannerInput() {
+                if (!hardwareScannerInput) {
+                    return;
+                }
+
+                const scannedValue = hardwareScannerInput.value.trim();
+                hardwareScannerInput.value = '';
+
+                if (scannedValue.length >= 4) {
+                    setScannerStatus('Hardware scanner code received. Details are being read from the scan.', 'success');
+                    captureScannedValue(scannedValue);
+                }
+
+                focusHardwareScannerInput();
+            }
+
+            function handleHardwareScannerKeydown(event) {
+                if (event.ctrlKey || event.altKey || event.metaKey) {
+                    return;
+                }
+
+                const now = Date.now();
+                if (hardwareScannerLastKeyAt && now - hardwareScannerLastKeyAt > 180) {
+                    clearHardwareScannerBuffer();
+                }
+
+                if (event.key === 'Enter' || event.key === 'Tab') {
+                    if (hardwareScannerBuffer.length >= 4) {
+                        event.preventDefault();
+                        flushHardwareScannerBuffer();
+                    }
+                    return;
+                }
+
+                if (event.key && event.key.length === 1) {
+                    hardwareScannerBuffer += event.key;
+                    hardwareScannerLastKeyAt = now;
+
+                    if (hardwareScannerBuffer.length > 2) {
+                        event.preventDefault();
+                    }
+
+                    if (hardwareScannerFlushTimer) {
+                        window.clearTimeout(hardwareScannerFlushTimer);
+                    }
+
+                    hardwareScannerFlushTimer = window.setTimeout(function () {
+                        if (hardwareScannerBuffer.length >= 8) {
+                            flushHardwareScannerBuffer();
+                        }
+                    }, 140);
+                }
+            }
+
+            function captureScannedValue(value) {
+                const scannedValue = (value || '').trim();
+                if (!scannedValue) {
+                    return;
+                }
+
+                const now = Date.now();
+                if (scannedValue === lastScannedValue && now - lastScanAt < 2500) {
+                    return;
+                }
+
+                lastScannedValue = scannedValue;
+                lastScanAt = now;
+                pendingAutoSubmit = true;
+                scanInput.value = scannedValue;
+                setScannerStatus('Card barcode captured. Details are being read from the scan.', 'success');
+                refreshPreview();
+                stopCamera();
+                focusHardwareScannerInput();
+            }
+
+            function isTwoDimensionalFormat(format) {
+                return format === ZXing.BarcodeFormat.QR_CODE
+                    || format === ZXing.BarcodeFormat.PDF_417
+                    || format === ZXing.BarcodeFormat.DATA_MATRIX
+                    || format === ZXing.BarcodeFormat.AZTEC;
+            }
+
+            function handleBarcodeResult(result) {
+                const scannedValue = result && result.getText ? result.getText() : '';
+                if (!scannedValue) {
+                    return;
+                }
+
+                const format = result.getBarcodeFormat ? result.getBarcodeFormat() : null;
+                if (isTwoDimensionalFormat(format)) {
+                    if (pendingOneDimensionalTimer) {
+                        window.clearTimeout(pendingOneDimensionalTimer);
+                        pendingOneDimensionalTimer = null;
+                    }
+
+                    captureScannedValue(scannedValue);
+                    return;
+                }
+
+                pendingOneDimensionalValue = scannedValue;
+                setScannerStatus('Barcode detected. Holding briefly for the detailed 2D code on the card.', 'success');
+
+                if (!pendingOneDimensionalTimer) {
+                    pendingOneDimensionalTimer = window.setTimeout(function () {
+                        captureScannedValue(pendingOneDimensionalValue);
+                        pendingOneDimensionalTimer = null;
+                    }, 900);
+                }
+            }
+
+            async function startCamera() {
+                if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+                    setScannerStatus('This browser cannot access a camera. Check browser permissions and use http://localhost or HTTPS.', 'danger');
+                    return;
+                }
+
+                if (!window.ZXing || !window.ZXing.BrowserMultiFormatReader) {
+                    setScannerStatus('The barcode scanner script did not load. Press Ctrl + F5. If it still shows this, the CDN script is being blocked by the browser or network.', 'danger');
+                    return;
+                }
+
+                try {
+                    pendingOneDimensionalValue = null;
+                    if (pendingOneDimensionalTimer) {
+                        window.clearTimeout(pendingOneDimensionalTimer);
+                        pendingOneDimensionalTimer = null;
+                    }
+
+                    const hints = new Map();
+                    hints.set(ZXing.DecodeHintType.POSSIBLE_FORMATS, [
+                        ZXing.BarcodeFormat.QR_CODE,
+                        ZXing.BarcodeFormat.PDF_417,
+                        ZXing.BarcodeFormat.CODE_128,
+                        ZXing.BarcodeFormat.CODE_39,
+                        ZXing.BarcodeFormat.CODE_93,
+                        ZXing.BarcodeFormat.EAN_13,
+                        ZXing.BarcodeFormat.EAN_8,
+                        ZXing.BarcodeFormat.ITF,
+                        ZXing.BarcodeFormat.DATA_MATRIX,
+                        ZXing.BarcodeFormat.AZTEC
+                    ]);
+                    hints.set(ZXing.DecodeHintType.TRY_HARDER, true);
+
+                    await loadCameras();
+                    codeReader = new ZXing.BrowserMultiFormatReader(hints, 40);
+                    setCameraActive(true);
+                    setScannerStatus('Camera is scanning. Hold the barcode steady, flat, and large inside the frame.', 'success');
+
+                    await codeReader.decodeFromConstraints(getVideoConstraints(), video, function (result, error) {
+                        if (video && video.srcObject && !activeTrack) {
+                            configureActiveCameraControls();
+                        }
+
+                        if (result) {
+                            handleBarcodeResult(result);
+                            return;
+                        }
+
+                        if (error && !(error instanceof ZXing.NotFoundException)) {
+                            setScannerStatus('Camera is active. Move the card closer, keep it flat, and hold it steady.', 'warning');
+                        } else if (error) {
+                            const now = Date.now();
+                            if (now - lastDecodeHintAt > 3500) {
+                                lastDecodeHintAt = now;
+                                setScannerStatus('Still scanning. Fill the green frame with the barcode and use zoom if available.', 'warning');
+                            }
+                        }
+                    });
+                } catch (error) {
+                    setCameraActive(false);
+                    setScannerStatus('Camera could not start or read from this device. Allow camera permission for this site, then try again.', 'danger');
+                }
+            }
+
+            function stopCamera() {
+                if (pendingOneDimensionalTimer) {
+                    window.clearTimeout(pendingOneDimensionalTimer);
+                    pendingOneDimensionalTimer = null;
+                }
+
+                if (codeReader) {
+                    codeReader.reset();
+                    codeReader = null;
+                }
+
+                if (video) {
+                    video.pause();
+                    video.srcObject = null;
+                }
+
+                activeTrack = null;
+                if (zoomControl) {
+                    zoomControl.classList.add('d-none');
+                }
+                setCameraActive(false);
+            }
+
+            function submitScan() {
+                if (!form || isSubmitting || !scanInput.value.trim()) {
+                    return;
+                }
+
+                if (studentSelect && !studentSelect.value) {
+                    studentSelect.focus();
+                    studentSelect.classList.add('is-invalid');
+                    return;
+                }
+
+                isSubmitting = true;
+                if (form.requestSubmit) {
+                    form.requestSubmit();
+                } else {
+                    form.submit();
+                }
+            }
+
+            if (startCameraButton) {
+                startCameraButton.addEventListener('click', startCamera);
+            }
+
+            if (stopCameraButton) {
+                stopCameraButton.addEventListener('click', function () {
+                    stopCamera();
+                    setScannerStatus('Camera stopped.', 'warning');
+                });
+            }
+
+            if (studentSelect) {
+                studentSelect.addEventListener('change', function () {
+                    studentSelect.classList.remove('is-invalid');
+                    focusHardwareScannerInput();
+                });
+            }
+
+            if (hardwareScannerInput) {
+                hardwareScannerInput.addEventListener('input', function () {
+                    window.clearTimeout(hardwareScannerInputTimer);
+                    hardwareScannerInputTimer = window.setTimeout(flushHardwareScannerInput, 120);
+                });
+
+                hardwareScannerInput.addEventListener('keydown', function (event) {
+                    if (event.key === 'Enter' || event.key === 'Tab') {
+                        event.preventDefault();
+                        flushHardwareScannerInput();
+                    }
+                });
+            }
+
+            if (cameraSelect) {
+                cameraSelect.addEventListener('change', function () {
+                    if (codeReader) {
+                        stopCamera();
+                        startCamera();
+                    }
+                });
+            }
+
+            if (cameraZoom) {
+                cameraZoom.addEventListener('input', function () {
+                    applyZoom(cameraZoom.value);
+                });
+            }
+
+            document.addEventListener('keydown', handleHardwareScannerKeydown, true);
+            window.addEventListener('beforeunload', stopCamera);
+
+            loadCameras();
+            focusHardwareScannerInput();
+            refreshPreview();
+        })();
+    </script>
+}
+
+<style>
+    .input-group-text {
+        min-width: 38px;
+        justify-content: center;
+    }
+
+    .btn-group-sm > .btn, .btn-sm {
+        padding: 0.375rem 0.75rem;
+    }
+
+    .alert-info, .alert-warning {
+        border-radius: 10px;
+    }
+
+    .scanner-input {
+        min-height: 112px;
+        font-family: Consolas, "Courier New", monospace;
+        letter-spacing: 0;
+    }
+
+    .scanner-capture-input {
+        position: fixed;
+        left: -1000px;
+        top: -1000px;
+        width: 1px;
+        height: 1px;
+        opacity: 0;
+        pointer-events: none;
+    }
+
+    .camera-scanner {
+        position: relative;
+        min-height: 360px;
+        overflow: hidden;
+        border: 1px solid var(--border-color);
+        border-radius: 8px;
+        background: #111118;
+    }
+
+    .camera-scanner video {
+        width: 100%;
+        height: 360px;
+        object-fit: cover;
+        display: block;
+        background: #111118;
+    }
+
+    .camera-placeholder {
+        position: absolute;
+        inset: 0;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        text-align: center;
+        color: rgba(255,255,255,0.82);
+        background: linear-gradient(135deg, rgba(17,17,24,0.96), rgba(45,45,58,0.9));
+        padding: 1.5rem;
+        font-weight: 600;
+    }
+
+    .camera-frame {
+        pointer-events: none;
+        position: absolute;
+        inset: 12%;
+    }
+
+    .camera-frame span {
+        position: absolute;
+        width: 42px;
+        height: 42px;
+        border-color: #22c55e;
+        border-style: solid;
+    }
+
+    .camera-frame span:nth-child(1) {
+        top: 0;
+        left: 0;
+        border-width: 4px 0 0 4px;
+    }
+
+    .camera-frame span:nth-child(2) {
+        top: 0;
+        right: 0;
+        border-width: 4px 4px 0 0;
+    }
+
+    .camera-frame span:nth-child(3) {
+        right: 0;
+        bottom: 0;
+        border-width: 0 4px 4px 0;
+    }
+
+    .camera-frame span:nth-child(4) {
+        bottom: 0;
+        left: 0;
+        border-width: 0 0 4px 4px;
+    }
+
+    .camera-actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+    }
+
+    .camera-controls {
+        display: grid;
+        grid-template-columns: minmax(220px, 1fr) minmax(180px, 0.7fr);
+        gap: 0.75rem;
+        align-items: end;
+    }
+
+    .scanner-status {
+        border-radius: 8px;
+        padding: 0.75rem;
+        background: var(--bg-elevated);
+        border: 1px solid var(--border-light);
+        color: var(--text-muted);
+        font-size: 0.9rem;
+    }
+
+    .scanner-status-success {
+        background: rgba(34,197,94,0.1);
+        border-color: rgba(34,197,94,0.25);
+        color: #16a34a;
+    }
+
+    .scanner-status-warning {
+        background: rgba(245,158,11,0.12);
+        border-color: rgba(245,158,11,0.28);
+        color: #d97706;
+    }
+
+    .scanner-status-danger {
+        background: rgba(239,68,68,0.1);
+        border-color: rgba(239,68,68,0.25);
+        color: #ef4444;
+    }
+
+    .captured-panel {
+        border: 1px solid var(--border-color);
+        border-radius: 8px;
+        background: var(--bg-elevated);
+        padding: 1rem;
+    }
+
+    .captured-empty {
+        color: var(--text-muted);
+        font-weight: 600;
+        text-align: center;
+        padding: 1rem;
+    }
+
+    .captured-status {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 0.75rem;
+        color: var(--text-primary);
+        font-weight: 700;
+        margin-bottom: 1rem;
+    }
+
+    .captured-badge {
+        border-radius: 999px;
+        padding: 0.3rem 0.7rem;
+        background: rgba(34,197,94,0.15);
+        color: #16a34a;
+        border: 1px solid rgba(34,197,94,0.35);
+        font-size: 0.8rem;
+        white-space: nowrap;
+    }
+
+    .captured-badge-warning {
+        background: rgba(245,158,11,0.15);
+        color: #d97706;
+        border-color: rgba(245,158,11,0.35);
+    }
+
+    .captured-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 0.75rem;
+    }
+
+    .captured-grid div {
+        min-width: 0;
+        padding: 0.75rem;
+        border: 1px solid var(--border-light);
+        border-radius: 8px;
+        background: var(--bg-card);
+    }
+
+    .captured-grid span {
+        display: block;
+        color: var(--text-muted);
+        font-size: 0.78rem;
+        margin-bottom: 0.25rem;
+    }
+
+    .captured-grid strong {
+        display: block;
+        color: var(--text-primary);
+        overflow-wrap: anywhere;
+    }
+
+    .scan-step {
+        display: flex;
+        align-items: flex-start;
+        gap: 0.75rem;
+        padding: 0.9rem 0;
+        border-bottom: 1px solid var(--border-light);
+    }
+
+    .scan-step:last-of-type {
+        border-bottom: 0;
+    }
+
+    .scan-step-icon {
+        width: 38px;
+        height: 38px;
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: var(--primary);
+        background: rgba(59,130,246,0.15);
+        flex: 0 0 auto;
+    }
+
+    [data-theme="light"] .input-group-text {
+        background-color: #f8f9fa;
+        border-color: #dee2e6;
+        color: #495057;
+    }
+
+    [data-theme="light"] .alert-info {
+        background-color: #d1ecf1;
+        border-color: #bee5eb;
+        color: #0c5460;
+    }
+
+    [data-theme="light"] .alert-warning {
+        background-color: #fff3cd;
+        border-color: #ffeeba;
+        color: #856404;
+    }
+
+    @@media (max-width: 575.98px) {
+        .camera-scanner,
+        .camera-scanner video {
+            min-height: 260px;
+            height: 260px;
+        }
+
+        .captured-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .camera-controls {
+            grid-template-columns: 1fr;
+        }
+    }
+</style>

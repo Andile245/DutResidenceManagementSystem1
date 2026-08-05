@@ -1,0 +1,542 @@
+﻿@model IEnumerable<DUTResManagementSystem.Models.Maintenance>
+
+@{
+    ViewBag.Title = "Technician Dashboard";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<style>
+    /* Hide sidebar for technician pages only */
+    .sidebar {
+        display: none !important;
+    }
+
+    .main-content {
+        margin-left: 0 !important;
+    }
+</style>
+
+<!-- ── Page Header ── -->
+<div class="page-header">
+    <div>
+        <h1>
+            <i class="fas fa-user-cog me-2" style="color:var(--primary)"></i>
+            My Assigned Jobs
+        </h1>
+        <div class="breadcrumb-text">
+            View and manage all maintenance jobs assigned to you
+        </div>
+    </div>
+    <div>
+        <a href="@Url.Action("Logout", "Technician")" class="btn btn-danger btn-sm">
+            <i class="fas fa-sign-out-alt me-2"></i>Logout
+        </a>
+    </div>
+</div>
+
+<!-- ── Alerts ── -->
+@if (TempData["Success"] != null)
+{
+    <div class="alert alert-success alert-dismissible fade show mb-3">
+        <i class="fas fa-check-circle me-2"></i>@TempData["Success"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+}
+
+@if (TempData["Error"] != null)
+{
+    <div class="alert alert-danger alert-dismissible fade show mb-3">
+        <i class="fas fa-exclamation-circle me-2"></i>@TempData["Error"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+}
+
+<!-- ── Stat Cards ── -->
+<div class="row g-3 mb-4">
+    <div class="col-md-4">
+        <div class="stat-card">
+            <div class="stat-icon" style="background:rgba(59,130,246,0.15);color:var(--primary)">
+                <i class="fas fa-spinner"></i>
+            </div>
+            <div>
+                <div class="stat-num">@Model.Count(x => x.Status == "In Progress")</div>
+                <div class="stat-label">In Progress</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="stat-card">
+            <div class="stat-icon" style="background:rgba(34,197,94,0.15);color:#22c55e">
+                <i class="fas fa-check-circle"></i>
+            </div>
+            <div>
+                <div class="stat-num">@Model.Count(x => x.Status == "Resolved")</div>
+                <div class="stat-label">Completed</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="stat-card">
+            <div class="stat-icon" style="background:rgba(239,68,68,0.15);color:#ef4444">
+                <i class="fas fa-list"></i>
+            </div>
+            <div>
+                <div class="stat-num">@Model.Count()</div>
+                <div class="stat-label">Total Jobs</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ── Jobs Table ── -->
+<div class="card">
+    <div class="card-header">
+        <i class="fas fa-tools me-2" style="color:var(--primary)"></i>
+        Assigned Maintenance Jobs
+    </div>
+    <div class="card-body p-0">
+        @if (Model.Any())
+        {
+            <div class="table-responsive">
+                <table class="table mb-0" id="jobsTable">
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>Date Reported</th>
+                            <th>Room</th>
+                            <th>Issue</th>
+                            <th>Status</th>
+                            <th>Before / After</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var job in Model)
+                        {
+                            string statusBg = job.Status == "In Progress" ? "rgba(59,130,246,0.15)" : "rgba(34,197,94,0.15)";
+                            string statusColor = job.Status == "In Progress" ? "var(--primary)" : "#22c55e";
+
+                            <tr>
+                                <td>@job.MaintenanceID</td>
+                                <td style="white-space:nowrap;color:var(--text-muted)">
+                                    @job.DateReported.ToString("dd MMM yyyy")
+                                </td>
+                                <td style="color:var(--text-secondary)">@job.RoomNumber</td>
+                                <td style="max-width:280px;color:var(--text-secondary)">
+                                    @(job.IssueDescription?.Length > 60
+                                        ? job.IssueDescription.Substring(0, 60) + "…"
+                                        : job.IssueDescription)
+                                </td>
+                                <td>
+                                    <span class="badge" style="background:@statusBg;color:@statusColor;border:1px solid @statusColor">
+                                        @job.Status
+                                    </span>
+                                </td>
+                                <!-- Before / After Images -->
+                                <td>
+                                    @if (!string.IsNullOrEmpty(job.ImagePath))
+                                    {
+                                        <a href="@job.ImagePath" target="_blank" title="Student-uploaded photo">
+                                            <img src="@job.ImagePath"
+                                                 width="45" height="45"
+                                                 style="border-radius:8px;object-fit:cover;margin-right:4px;border:1px solid var(--border-light)" />
+                                        </a>
+                                    }
+
+                                    @if (!string.IsNullOrEmpty(job.CompletionImage))
+                                    {
+                                        <a href="@job.CompletionImage" target="_blank" title="Completion proof">
+                                            <img src="@job.CompletionImage"
+                                                 width="45" height="45"
+                                                 style="border-radius:8px;object-fit:cover;border:2px solid #22c55e;" />
+                                        </a>
+                                    }
+
+                                    @if (string.IsNullOrEmpty(job.ImagePath) && string.IsNullOrEmpty(job.CompletionImage))
+                                    {
+                                        <span class="text-muted">—</span>
+                                    }
+                                </td>
+                                <!-- Action -->
+                                <td>
+                                    @if (job.Status == "In Progress")
+                                    {
+                                        <button type="button"
+                                                class="btn btn-success btn-sm btn-open-resolve"
+                                                data-id="@job.MaintenanceID"
+                                                data-room="@job.RoomNumber">
+                                            <i class="fas fa-check me-1"></i>Resolve
+                                        </button>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge" style="background:rgba(34,197,94,0.15);color:#22c55e;border:1px solid #22c55e">
+                                            <i class="fas fa-check me-1"></i>Done
+                                        </span>
+                                    }
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+        else
+        {
+            <div class="text-center py-5" style="color:var(--text-muted)">
+                <i class="fas fa-tools fa-3x mb-3 d-block"></i>
+                <h5>No jobs assigned yet</h5>
+                <p class="mb-0">You currently have no maintenance tasks assigned to you.</p>
+            </div>
+        }
+    </div>
+</div>
+
+<!-- ── RESOLVE JOB MODAL ── -->
+<div class="modal fade" id="resolveModal" tabindex="-1" aria-labelledby="resolveModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="resolveModalLabel">
+                    <i class="fas fa-check-circle me-2" style="color:var(--primary)"></i>
+                    Resolve Job
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+
+            <form id="resolveForm" action="@Url.Action("CompleteJob", "Technician")" method="post" enctype="multipart/form-data">
+                @Html.AntiForgeryToken()
+                <input type="hidden" id="resolveMaintenanceId" name="maintenanceId" value="" />
+
+                <div class="modal-body">
+                    <p class="small mb-3" style="color:var(--text-muted)">
+                        <i class="fas fa-info-circle me-1"></i>
+                        Please upload a photo as proof that the job has been completed.
+                    </p>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Proof-of-Completion Photo</label>
+                        <input type="file" id="proofImageInput" name="proofImage" class="form-control" accept="image/*" required />
+                        <div class="form-text">Accepted formats: JPG, PNG, WEBP</div>
+                    </div>
+
+                    <div id="imagePreviewWrapper" class="mt-2" style="display:none;">
+                        <p class="form-label small text-muted mb-1">Preview</p>
+                        <img id="imagePreview" src="#" alt="Preview" style="max-height:180px;border-radius:10px;object-fit:cover;border:1px solid var(--border-color);" />
+                    </div>
+                </div>
+
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                        <i class="fas fa-times me-1"></i>Cancel
+                    </button>
+                    <button type="submit" id="confirmResolveBtn" class="btn btn-success" disabled>
+                        <i class="fas fa-upload me-1"></i>Upload &amp; Complete
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<style>
+    /* Stat Cards */
+    .stat-card {
+        background: var(--bg-card) !important;
+        border: 1px solid var(--border-color) !important;
+        border-radius: 12px;
+        padding: 1.25rem;
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        transition: transform 0.2s, border-color 0.2s;
+    }
+
+        .stat-card:hover {
+            transform: translateY(-2px);
+            border-color: var(--primary) !important;
+        }
+
+    .stat-num {
+        font-family: 'Roboto', sans-serif;
+        font-size: 1.8rem;
+        font-weight: 700;
+        color: var(--text-primary);
+        line-height: 1;
+    }
+
+    .stat-label {
+        font-size: 0.78rem;
+        color: var(--text-muted);
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        margin-top: 0.2rem;
+    }
+
+    .stat-icon {
+        width: 52px;
+        height: 52px;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.4rem;
+        flex-shrink: 0;
+    }
+
+    /* Card */
+    .card {
+        background: var(--bg-card) !important;
+        border: 1px solid var(--border-color) !important;
+        border-radius: 12px !important;
+    }
+
+    .card-header {
+        background: var(--card-header-bg) !important;
+        border-bottom: 1px solid var(--border-light) !important;
+        border-radius: 12px 12px 0 0 !important;
+        padding: 1rem 1.25rem;
+        font-weight: 600;
+        color: var(--text-primary);
+    }
+
+    .card-body {
+        background: var(--bg-card) !important;
+    }
+
+    /* Table */
+    .table {
+        color: var(--text-secondary) !important;
+    }
+
+        .table thead th {
+            background: var(--bg-elevated) !important;
+            color: var(--text-primary) !important;
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            border-color: var(--border-light) !important;
+            font-weight: 600;
+        }
+
+        .table tbody tr {
+            border-color: var(--border-light) !important;
+        }
+
+            .table tbody tr:hover {
+                background: var(--table-hover) !important;
+            }
+
+        .table td, .table th {
+            border-color: var(--border-light) !important;
+            color: var(--text-secondary);
+        }
+
+    /* Page Header */
+    .page-header {
+        margin-bottom: 1.5rem;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 1rem;
+    }
+
+        .page-header h1 {
+            font-family: 'Roboto', sans-serif;
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--text-primary);
+            margin: 0;
+        }
+
+    .breadcrumb-text {
+        font-size: 0.85rem;
+        color: var(--text-muted);
+        margin-top: 0.25rem;
+    }
+
+    /* Buttons */
+    .btn-danger {
+        background: #ef4444 !important;
+        border-color: #ef4444 !important;
+    }
+
+        .btn-danger:hover {
+            background: #dc2626 !important;
+            border-color: #dc2626 !important;
+            transform: translateY(-1px);
+        }
+
+    .btn-success {
+        background: #22c55e !important;
+        border-color: #22c55e !important;
+    }
+
+        .btn-success:hover {
+            background: #16a34a !important;
+            border-color: #16a34a !important;
+            transform: translateY(-1px);
+        }
+
+    .btn-secondary {
+        background: var(--bg-elevated) !important;
+        border-color: var(--border-color) !important;
+        color: var(--text-primary) !important;
+    }
+
+        .btn-secondary:hover {
+            background: var(--hover-bg) !important;
+            transform: translateY(-1px);
+        }
+
+    /* Form Elements */
+    .form-control {
+        background: var(--bg-input) !important;
+        border: 1px solid var(--border-color) !important;
+        color: var(--text-primary) !important;
+        border-radius: 8px;
+    }
+
+        .form-control:focus {
+            border-color: var(--primary) !important;
+            box-shadow: 0 0 0 3px rgba(59,130,246,0.15) !important;
+        }
+
+    .form-label {
+        color: var(--text-primary);
+        font-size: 0.85rem;
+        font-weight: 600;
+        margin-bottom: 0.5rem;
+    }
+
+    .form-text {
+        color: var(--text-muted-light) !important;
+        font-size: 0.75rem;
+        margin-top: 0.25rem;
+    }
+
+    /* Modal */
+    .modal-content {
+        background: var(--modal-bg) !important;
+        border: 1px solid var(--modal-border) !important;
+        border-radius: 16px;
+    }
+
+    .modal-header {
+        border-bottom: 1px solid var(--border-light) !important;
+    }
+
+    .modal-footer {
+        border-top: 1px solid var(--border-light) !important;
+    }
+
+    .modal-title {
+        color: var(--text-primary);
+    }
+
+    /* Alerts */
+    .alert-success {
+        background: rgba(34,197,94,0.1) !important;
+        border: 1px solid rgba(34,197,94,0.2) !important;
+        color: var(--text-primary) !important;
+        border-radius: 12px;
+    }
+
+    [data-theme="light"] .alert-success {
+        background: #d4edda !important;
+        color: #155724 !important;
+        border-color: #c3e6cb !important;
+    }
+
+    .alert-danger {
+        background: rgba(239,68,68,0.1) !important;
+        border: 1px solid rgba(239,68,68,0.2) !important;
+        color: #ef4444 !important;
+        border-radius: 12px;
+    }
+
+    [data-theme="light"] .alert-danger {
+        background: #f8d7da !important;
+        color: #721c24 !important;
+        border-color: #f5c6cb !important;
+    }
+
+    .text-muted {
+        color: var(--text-muted) !important;
+    }
+
+    /* Light mode overrides */
+    [data-theme="light"] .stat-num {
+        color: #1a1a2e;
+    }
+
+    [data-theme="light"] .card-header {
+        color: #1a1a2e;
+    }
+
+    [data-theme="light"] .btn-secondary {
+        background: #f8f9fa !important;
+        border-color: #dee2e6 !important;
+        color: #1a1a2e !important;
+    }
+</style>
+
+@section Scripts {
+    <script>
+        $(document).ready(function () {
+            $('#jobsTable').DataTable({
+                pageLength: 10,
+                order: [[0, 'desc']],
+                responsive: true,
+                language: {
+                    search: "Search:",
+                    lengthMenu: "Show _MENU_ entries",
+                    info: "Showing _START_ to _END_ of _TOTAL_ jobs",
+                    paginate: {
+                        previous: "Previous",
+                        next: "Next"
+                    }
+                }
+            });
+
+            // Open modal when any Resolve button is clicked
+            $(document).on('click', '.btn-open-resolve', function () {
+                var id = $(this).data('id');
+                var room = $(this).data('room');
+
+                $('#resolveMaintenanceId').val(id);
+                $('#resolveModalLabel').html(
+                    '<i class="fas fa-check-circle me-2" style="color:var(--primary)"></i>' +
+                    'Resolve Job — Room ' + room + ' (Request #' + id + ')'
+                );
+
+                $('#proofImageInput').val('');
+                $('#imagePreview').attr('src', '#');
+                $('#imagePreviewWrapper').hide();
+                $('#confirmResolveBtn').prop('disabled', true);
+
+                new bootstrap.Modal(document.getElementById('resolveModal')).show();
+            });
+
+            // Show image preview and enable submit when a file is chosen
+            $(document).on('change', '#proofImageInput', function () {
+                var file = this.files[0];
+
+                if (file) {
+                    var reader = new FileReader();
+                    reader.onload = function (e) {
+                        $('#imagePreview').attr('src', e.target.result);
+                        $('#imagePreviewWrapper').show();
+                    };
+                    reader.readAsDataURL(file);
+                    $('#confirmResolveBtn').prop('disabled', false);
+                } else {
+                    $('#imagePreview').attr('src', '#');
+                    $('#imagePreviewWrapper').hide();
+                    $('#confirmResolveBtn').prop('disabled', true);
+                }
+            });
+        });
+    </script>
+}

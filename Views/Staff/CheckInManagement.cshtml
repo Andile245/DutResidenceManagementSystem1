@@ -1,0 +1,454 @@
+﻿@model List<DUTResManagementSystem.Models.Student>
+
+@{
+    ViewBag.Title = "Check-In Management";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+
+    var residence = ViewBag.Residence as DUTResManagementSystem.Models.Residence;
+    var checkIns = ViewBag.CheckIns as List<DUTResManagementSystem.Models.ResidenceCheckIn>;
+    string baseUrl = ViewBag.BaseUrl;
+}
+
+@Html.AntiForgeryToken()
+
+<!-- Page Header -->
+<div class="page-header">
+    <div>
+        <h1><i class="fas fa-qrcode me-2" style="color:var(--primary)"></i>Check-In Management</h1>
+        <div class="breadcrumb-text">
+            <i class="fas fa-building me-1"></i>
+            <strong>@(residence?.Name ?? "Your Residence")</strong>
+            — Generate and manage student check-in QR codes
+        </div>
+    </div>
+    <div class="d-flex gap-2">
+        <a href="@Url.Action("CheckInLog", "Staff")" class="btn btn-outline-primary btn-sm">
+            <i class="fas fa-list me-1"></i>View Log
+        </a>
+        @using (Html.BeginForm("GenerateAllQRCodes", "Staff", FormMethod.Post, new { @class = "d-inline" }))
+        {
+            @Html.AntiForgeryToken()
+            <button type="submit" class="btn btn-primary btn-sm"
+                    onclick="return confirm('Generate QR codes for ALL @Model.Count student(s)? This will reset any existing codes.')">
+                <i class="fas fa-qrcode me-1"></i>Generate All QR Codes
+            </button>
+        }
+    </div>
+</div>
+
+@if (TempData["SuccessMessage"] != null)
+{
+    <div class="alert alert-success alert-dismissible fade show mb-3">
+        <i class="fas fa-check-circle me-2"></i>@TempData["SuccessMessage"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+}
+@if (TempData["ErrorMessage"] != null)
+{
+    <div class="alert alert-danger alert-dismissible fade show mb-3">
+        <i class="fas fa-exclamation-circle me-2"></i>@TempData["ErrorMessage"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+}
+
+<!-- Stat Cards -->
+<div class="row g-3 mb-4">
+    <div class="col-md-3">
+        <div class="stat-card">
+            <div class="stat-icon" style="background:rgba(59,130,246,0.15);color:var(--primary)">
+                <i class="fas fa-users"></i>
+            </div>
+            <div>
+                <div class="stat-num">@ViewBag.TotalStudents</div>
+                <div class="stat-label">Total Students</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="stat-card">
+            <div class="stat-icon" style="background:rgba(139,92,246,0.15);color:#8b5cf6">
+                <i class="fas fa-qrcode"></i>
+            </div>
+            <div>
+                <div class="stat-num">@ViewBag.QRGeneratedCount</div>
+                <div class="stat-label">QR Codes Generated</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="stat-card">
+            <div class="stat-icon" style="background:rgba(34,197,94,0.15);color:#22c55e">
+                <i class="fas fa-check-circle"></i>
+            </div>
+            <div>
+                <div class="stat-num">@ViewBag.CheckedInCount</div>
+                <div class="stat-label">Checked In</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="stat-card">
+            <div class="stat-icon" style="background:rgba(245,158,11,0.15);color:#f59e0b">
+                <i class="fas fa-clock"></i>
+            </div>
+            <div>
+                <div class="stat-num">@ViewBag.NotCheckedIn</div>
+                <div class="stat-label">Not Yet Checked In</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Students Table -->
+<div class="card">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <span><i class="fas fa-list me-2" style="color:var(--primary)"></i>Students — QR Code Status</span>
+        <span class="badge" style="background:var(--primary-light);color:var(--primary)">@Model.Count</span>
+    </div>
+    <div class="card-body p-0">
+        @if (Model.Any())
+        {
+            <div class="table-responsive">
+                <table class="table mb-0" id="checkInTable">
+                    <thead>
+                        <tr>
+                            <th>Student</th>
+                            <th>Student #</th>
+                            <th>Gender</th>
+                            <th>Room</th>
+                            <th>QR Status</th>
+                            <th>Check-In</th>
+                            <th>Check-Out</th>
+                            <th>Generated</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var student in Model)
+                        {
+                            var checkIn = checkIns?.FirstOrDefault(c => c.StudentID == student.StudentID);
+                            bool hasQR = checkIn != null;
+                            bool checkedIn = checkIn?.HasCheckedIn ?? false;
+                            bool checkedOut = checkIn?.HasCheckedOut ?? false;
+
+                            string statusColor = checkedIn ? "#22c55e"
+                                               : hasQR ? "#f59e0b"
+                                               : "var(--text-muted)";
+                            string statusText = checkedIn ? "Checked In"
+                                               : hasQR ? "QR Generated"
+                                               : "No QR Yet";
+
+                            string statusBg = checkedIn ? "rgba(34,197,94,0.15)"
+                                            : hasQR ? "rgba(245,158,11,0.15)"
+                                            : "var(--bg-elevated)";
+
+                            string statusBorder = checkedIn ? "rgba(34,197,94,0.3)"
+                                                : hasQR ? "rgba(245,158,11,0.3)"
+                                                : "var(--border-color)";
+
+                            string genderBg = student.Gender == "Male" ? "rgba(59,130,246,0.15)" :
+                                             student.Gender == "Female" ? "rgba(236,72,153,0.15)" :
+                                             "rgba(107,114,128,0.15)";
+                            string genderColor = student.Gender == "Male" ? "var(--primary)" :
+                                                student.Gender == "Female" ? "#ec4899" :
+                                                "var(--text-muted)";
+                            <tr>
+                                <td>
+                                    <div style="font-weight:600;color:var(--text-primary)">
+                                        @student.FirstName @student.LastName
+                                    </div>
+                                    <div style="font-size:0.75rem;color:var(--text-muted)">@student.Email</div>
+                                </td>
+                                <td style="color:var(--text-secondary);font-size:0.85rem">@student.StudentNumber</td>
+                                <td>
+                                    <span class="badge" style="background:@genderBg;color:@genderColor;border:1px solid @genderColor">
+                                        @student.Gender
+                                    </span>
+                                </td>
+                                <td style="font-size:0.85rem;color:var(--text-muted)">
+                                    @(student.Room != null ? "Room " + student.Room.RoomNumber : "—")
+                                </td>
+                                <td>
+                                    <span class="badge" style="background:@statusBg;color:@statusColor;border:1px solid @statusBorder">
+                                        <i class="fas @(checkedIn ? "fa-check" : hasQR ? "fa-qrcode" : "fa-times") me-1"></i>
+                                        @statusText
+                                    </span>
+                                </td>
+                                <td style="font-size:0.78rem">
+                                    @if (checkedIn && checkIn.CheckInTime.HasValue)
+                                    {
+                                        <span style="color:#22c55e">
+                                            <i class="fas fa-check me-1"></i>
+                                            @checkIn.CheckInTime.Value.ToString("dd MMM yyyy HH:mm")
+                                        </span>
+                                    }
+                                    else
+                                    {
+                                        <span style="color:var(--text-muted)">Not yet</span>
+                                    }
+                                </td>
+                                <td style="font-size:0.78rem">
+                                    @if (checkedOut && checkIn.CheckOutTime.HasValue)
+                                    {
+                                        <span style="color:var(--text-secondary)">
+                                            @checkIn.CheckOutTime.Value.ToString("dd MMM yyyy HH:mm")
+                                        </span>
+                                    }
+                                    else
+                                    {
+                                        <span style="color:var(--text-muted)">—</span>
+                                    }
+                                </td>
+                                <td style="font-size:0.75rem;color:var(--text-muted)">
+                                    @(hasQR ? checkIn.TokenGeneratedAt.ToString("dd MMM HH:mm") : "—")
+                                </td>
+                                <td>
+                                    <div class="d-flex gap-1">
+                                        @using (Html.BeginForm("GenerateStudentQR", "Staff", FormMethod.Post, new { @class = "d-inline" }))
+                                        {
+                                            @Html.AntiForgeryToken()
+                                            <input type="hidden" name="studentId" value="@student.StudentID" />
+                                            <button type="submit"
+                                                    class="btn btn-sm @(hasQR ? "btn-outline-warning" : "btn-outline-primary")"
+                                                    title="@(hasQR ? "Regenerate QR Code" : "Generate QR Code")"
+                                                    onclick="return @(hasQR ? "confirm('Regenerate QR for " + student.FirstName + "? This will reset their check-in status and they must scan again.')" : "true")">
+                                                <i class="fas fa-qrcode"></i>
+                                                @(hasQR ? "Regenerate" : "Generate")
+                                            </button>
+                                        }
+                                        @if (hasQR)
+                                        {
+                                            <a href="@Url.Action("ViewStudentQR", "Staff", new { checkInId = checkIn.CheckInID })"
+                                               class="btn btn-sm btn-outline-primary" title="View QR Code">
+                                                <i class="fas fa-eye"></i> View QR
+                                            </a>
+                                        }
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+        else
+        {
+            <div class="text-center py-5" style="color:var(--text-muted)">
+                <i class="fas fa-users fa-3x mb-3"></i>
+                <h5>No students allocated to your residence yet</h5>
+                <p>Students must be allocated to your residence by the Admin before you can generate QR codes.</p>
+            </div>
+        }
+    </div>
+</div>
+
+<style>
+    /* Stat Cards */
+    .stat-card {
+        background: var(--bg-card) !important;
+        border: 1px solid var(--border-color) !important;
+        border-radius: 12px;
+        padding: 1.25rem;
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        transition: transform 0.2s, border-color 0.2s;
+    }
+
+        .stat-card:hover {
+            transform: translateY(-2px);
+            border-color: var(--primary) !important;
+        }
+
+    .stat-num {
+        font-family: 'Roboto', sans-serif;
+        font-size: 1.8rem;
+        font-weight: 700;
+        color: var(--text-primary);
+        line-height: 1;
+    }
+
+    .stat-label {
+        font-size: 0.78rem;
+        color: var(--text-muted);
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        margin-top: 0.2rem;
+    }
+
+    .stat-icon {
+        width: 52px;
+        height: 52px;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.4rem;
+        flex-shrink: 0;
+    }
+
+    /* Card */
+    .card {
+        background: var(--bg-card) !important;
+        border: 1px solid var(--border-color) !important;
+        border-radius: 12px !important;
+    }
+
+    .card-header {
+        background: var(--card-header-bg) !important;
+        border-bottom: 1px solid var(--border-light) !important;
+        border-radius: 12px 12px 0 0 !important;
+        padding: 1rem 1.25rem;
+        font-weight: 600;
+        color: var(--text-primary);
+    }
+
+    .card-body {
+        background: var(--bg-card) !important;
+    }
+
+    /* Table */
+    .table {
+        color: var(--text-secondary) !important;
+    }
+
+        .table thead th {
+            background: var(--bg-elevated) !important;
+            color: var(--text-primary) !important;
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            border-color: var(--border-light) !important;
+            font-weight: 600;
+        }
+
+        .table tbody tr {
+            border-color: var(--border-light) !important;
+        }
+
+            .table tbody tr:hover {
+                background: var(--table-hover) !important;
+            }
+
+        .table td, .table th {
+            border-color: var(--border-light) !important;
+            color: var(--text-secondary);
+        }
+
+    /* Buttons */
+    .btn-outline-primary {
+        color: var(--primary) !important;
+        border-color: var(--primary) !important;
+    }
+
+        .btn-outline-primary:hover {
+            background: var(--primary) !important;
+            color: white !important;
+        }
+
+    .btn-outline-warning {
+        color: #f59e0b !important;
+        border-color: #f59e0b !important;
+    }
+
+        .btn-outline-warning:hover {
+            background: #f59e0b !important;
+            color: white !important;
+        }
+
+    .btn-primary {
+        background: var(--primary) !important;
+        border-color: var(--primary) !important;
+    }
+
+        .btn-primary:hover {
+            background: var(--primary-dark) !important;
+            border-color: var(--primary-dark) !important;
+            transform: translateY(-1px);
+        }
+
+    /* Alerts */
+    .alert-success {
+        background: rgba(34,197,94,0.1) !important;
+        border: 1px solid rgba(34,197,94,0.2) !important;
+        color: var(--text-primary) !important;
+        border-radius: 12px;
+    }
+
+    [data-theme="light"] .alert-success {
+        background: #d4edda !important;
+        color: #155724 !important;
+        border-color: #c3e6cb !important;
+    }
+
+    .alert-danger {
+        background: rgba(239,68,68,0.1) !important;
+        border: 1px solid rgba(239,68,68,0.2) !important;
+        color: var(--text-primary) !important;
+        border-radius: 12px;
+    }
+
+    [data-theme="light"] .alert-danger {
+        background: #f8d7da !important;
+        color: #721c24 !important;
+        border-color: #f5c6cb !important;
+    }
+
+    /* Page Header */
+    .page-header {
+        margin-bottom: 1.5rem;
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        flex-wrap: wrap;
+        gap: 1rem;
+    }
+
+        .page-header h1 {
+            font-family: 'Roboto', sans-serif;
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--text-primary);
+            margin: 0;
+        }
+
+    .breadcrumb-text {
+        font-size: 0.85rem;
+        color: var(--text-muted);
+        margin-top: 0.25rem;
+    }
+
+    /* Light mode overrides */
+    [data-theme="light"] .stat-num {
+        color: #1a1a2e;
+    }
+
+    [data-theme="light"] .card-header {
+        color: #1a1a2e;
+    }
+
+    [data-theme="light"] .table td,
+    [data-theme="light"] .table th {
+        color: #2d3436 !important;
+    }
+</style>
+
+@section Scripts {
+    <script>
+        $(document).ready(function () {
+            $('#checkInTable').DataTable({
+                pageLength: 25,
+                order: [[0, 'asc']],
+                language: {
+                    search: "Search:",
+                    lengthMenu: "Show _MENU_ entries",
+                    info: "Showing _START_ to _END_ of _TOTAL_ students",
+                    paginate: {
+                        previous: "Previous",
+                        next: "Next"
+                    }
+                }
+            });
+        });
+    </script>
+}

@@ -1,0 +1,49 @@
+@model IEnumerable<DUTResManagementSystem.Models.Notification>
+@{
+    ViewBag.Title = "My notifications";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<div class="container py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div><h2 class="mb-1">My notifications</h2><p class="text-muted mb-0">Election updates, results, and other residence messages.</p></div>
+        @if (Model.Any(n => n.IsRead != true))
+        {
+            using (Html.BeginForm("MarkAllNotificationsRead", "Student", FormMethod.Post, new { @class = "d-inline" }))
+            {
+                @Html.AntiForgeryToken()
+                <button class="btn btn-outline-secondary">Mark all as read</button>
+            }
+        }
+    </div>
+
+    @if (!Model.Any())
+    {
+        <div class="alert alert-info">You have no notifications yet.</div>
+    }
+    else
+    {
+        <div class="list-group">
+            @foreach (var notification in Model)
+            {
+                <div class="list-group-item @(notification.IsRead == true ? "" : "border-danger")">
+                    <div class="d-flex justify-content-between gap-3">
+                        <div>
+                            <h5 class="mb-1">@notification.Title @if (notification.IsRead != true) { <span class="badge bg-danger">New</span> }</h5>
+                            <p class="mb-1" style="white-space:pre-line">@notification.Message</p>
+                            <small class="text-muted">@notification.DateCreated.ToString("dd MMM yyyy HH:mm") · @notification.NotificationType</small>
+                        </div>
+                        @if (notification.IsRead != true)
+                        {
+                            using (Html.BeginForm("MarkNotificationRead", "Student", new { id = notification.NotificationID }, FormMethod.Post, new { @class = "d-inline" }))
+                            {
+                                @Html.AntiForgeryToken()
+                                <button class="btn btn-sm btn-outline-secondary">Mark read</button>
+                            }
+                        }
+                    </div>
+                </div>
+            }
+        </div>
+    }
+</div>

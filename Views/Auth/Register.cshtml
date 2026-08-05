@@ -1,0 +1,706 @@
+﻿@model DUTResManagementSystem.ViewModels.RegisterViewModel
+@{
+    Layout = "~/Views/Shared/_Layout.cshtml";
+    // Get faculties from ViewBag or use default list
+    var faculties = ViewBag.Faculties as string[] ?? new[] {
+        "Accounting & Informatics",
+        "Applied Science",
+        "Arts and Design",
+        "Engineering and the Built Environment",
+        "Health Sciences",
+        "Management Sciences"
+    };
+}
+
+<!-- Success/Error Messages -->
+@if (TempData["SuccessMessage"] != null)
+{
+    <div class="alert alert-success alert-dismissible fade show">
+        <i class="fas fa-check-circle me-2"></i> @TempData["SuccessMessage"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+}
+
+@if (!ViewData.ModelState.IsValid)
+{
+    <div class="alert alert-danger alert-dismissible fade show">
+        <i class="fas fa-exclamation-circle me-2"></i>
+        <strong>Registration Errors:</strong>
+        <ul class="mb-0 mt-1">
+            @foreach (var error in ViewData.ModelState.Values.SelectMany(v => v.Errors))
+            {
+                <li>@error.ErrorMessage</li>
+            }
+        </ul>
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+}
+
+<div class="auth-wrapper">
+    <div class="auth-container">
+        <div class="auth-card auth-card-wide">
+            <div class="auth-logo">
+                <div class="auth-logo-icon">
+                    <i class="fas fa-user-plus"></i>
+                </div>
+                <h2>Create Account</h2>
+                <p>Join the DUT Residence Management System</p>
+            </div>
+
+            @using (Html.BeginForm("Register", "Auth", FormMethod.Post))
+            {
+                @Html.AntiForgeryToken()
+
+                <!-- User Type Selection -->
+                <div class="user-type-section">
+                    <label class="form-label">I am a:</label>
+                    <div class="user-type-options">
+                        <div class="user-type-option">
+                            @Html.RadioButtonFor(m => m.UserType, "Student", new { @class = "form-check-input", id = "studentRadio", @checked = "checked" })
+                            <label for="studentRadio">
+                                <i class="fas fa-user-graduate"></i>
+                                <span>Student</span>
+                            </label>
+                        </div>
+                        <div class="user-type-option">
+                            @Html.RadioButtonFor(m => m.UserType, "Staff", new { @class = "form-check-input", id = "staffRadio" })
+                            <label for="staffRadio">
+                                <i class="fas fa-user-tie"></i>
+                                <span>Staff</span>
+                            </label>
+                        </div>
+                    </div>
+                    @Html.ValidationMessageFor(m => m.UserType, "", new { @class = "text-danger small" })
+                </div>
+
+                <div class="row">
+                    <!-- Personal Information -->
+                    <div class="col-md-6">
+                        <div class="section-title">
+                            <i class="fas fa-user"></i>
+                            <span>Personal Information</span>
+                        </div>
+
+                        <div class="form-group">
+                            @Html.LabelFor(m => m.FirstName, new { @class = "form-label" })
+                            @Html.TextBoxFor(m => m.FirstName, new { @class = "form-control", placeholder = "Enter your first name" })
+                            @Html.ValidationMessageFor(m => m.FirstName, "", new { @class = "text-danger small" })
+                        </div>
+
+                        <div class="form-group">
+                            @Html.LabelFor(m => m.LastName, new { @class = "form-label" })
+                            @Html.TextBoxFor(m => m.LastName, new { @class = "form-control", placeholder = "Enter your last name" })
+                            @Html.ValidationMessageFor(m => m.LastName, "", new { @class = "text-danger small" })
+                        </div>
+
+                        <div class="form-group">
+                            @Html.LabelFor(m => m.Email, new { @class = "form-label" })
+                            @Html.TextBoxFor(m => m.Email, new { @class = "form-control", type = "email", placeholder = "name@example.com" })
+                            @Html.ValidationMessageFor(m => m.Email, "", new { @class = "text-danger small" })
+                        </div>
+
+                        <div class="form-group">
+                            @Html.LabelFor(m => m.PhoneNumber, new { @class = "form-label" })
+                            @Html.TextBoxFor(m => m.PhoneNumber, new { @class = "form-control", type = "tel", placeholder = "+27 XX XXX XXXX" })
+                            @Html.ValidationMessageFor(m => m.PhoneNumber, "", new { @class = "text-danger small" })
+                        </div>
+                    </div>
+
+                    <!-- Account Information -->
+                    <div class="col-md-6">
+                        <div class="section-title">
+                            <i class="fas fa-key"></i>
+                            <span>Account Information</span>
+                        </div>
+
+                        <div class="form-group">
+                            @Html.LabelFor(m => m.Password, new { @class = "form-label" })
+                            <div class="input-group">
+                                @Html.PasswordFor(m => m.Password, new { @class = "form-control", id = "passwordField", placeholder = "Create a password" })
+                                <button type="button" class="password-toggle" id="togglePassword">
+                                    <i class="fas fa-eye"></i>
+                                </button>
+                            </div>
+                            @Html.ValidationMessageFor(m => m.Password, "", new { @class = "text-danger small" })
+                        </div>
+
+                        <div class="form-group">
+                            @Html.LabelFor(m => m.ConfirmPassword, new { @class = "form-label" })
+                            <div class="input-group">
+                                @Html.PasswordFor(m => m.ConfirmPassword, new { @class = "form-control", id = "confirmPasswordField", placeholder = "Confirm your password" })
+                                <button type="button" class="password-toggle" id="toggleConfirmPassword">
+                                    <i class="fas fa-eye"></i>
+                                </button>
+                            </div>
+                            @Html.ValidationMessageFor(m => m.ConfirmPassword, "", new { @class = "text-danger small" })
+                        </div>
+
+                        <!-- Student Fields -->
+                        <div id="studentFields">
+                            <div class="section-title" style="margin-top: 0.5rem;">
+                                <i class="fas fa-graduation-cap"></i>
+                                <span>Student Details</span>
+                            </div>
+
+                            <div class="form-group">
+                                <label class="form-label">Gender *</label>
+                                <select class="form-select" name="Gender">
+                                    <option value="">Select Gender</option>
+                                    <option value="Male">Male</option>
+                                    <option value="Female">Female</option>
+                                    <option value="Other">Other</option>
+                                </select>
+                            </div>
+
+                            <div class="form-group">
+                                @Html.LabelFor(m => m.StudentNumber, new { @class = "form-label" })
+                                @Html.TextBoxFor(m => m.StudentNumber, new { @class = "form-control", placeholder = "e.g., 22000000" })
+                                @Html.ValidationMessageFor(m => m.StudentNumber, "", new { @class = "text-danger small" })
+                            </div>
+
+                            <div class="form-group">
+                                @Html.LabelFor(m => m.Faculty, new { @class = "form-label" })
+                                @Html.DropDownListFor(m => m.Faculty,
+                                    new SelectList(faculties),
+                                    "Select Faculty",
+                                    new { @class = "form-select" })
+                                @Html.ValidationMessageFor(m => m.Faculty, "", new { @class = "text-danger small" })
+                            </div>
+
+                            <div class="form-group">
+                                @Html.LabelFor(m => m.YearOfStudy, new { @class = "form-label" })
+                                @Html.TextBoxFor(m => m.YearOfStudy, new { @class = "form-control", type = "number", min = "1", max = "5", placeholder = "1-5" })
+                                @Html.ValidationMessageFor(m => m.YearOfStudy, "", new { @class = "text-danger small" })
+                            </div>
+                        </div>
+
+                        <!-- Staff Fields -->
+                        <div id="staffFields" style="display: none;">
+                            <div class="section-title" style="margin-top: 0.5rem;">
+                                <i class="fas fa-briefcase"></i>
+                                <span>Staff Details</span>
+                            </div>
+
+                            <div class="form-group">
+                                @Html.LabelFor(m => m.StaffNumber, new { @class = "form-label" })
+                                @Html.TextBoxFor(m => m.StaffNumber, new { @class = "form-control", placeholder = "e.g., STF001" })
+                                @Html.ValidationMessageFor(m => m.StaffNumber, "", new { @class = "text-danger small" })
+                            </div>
+
+                            <div class="form-group">
+                                @Html.LabelFor(m => m.Role, new { @class = "form-label" })
+                                @Html.DropDownListFor(m => m.Role,
+                                    new SelectList(new[] { "Admin", "Building Manager", "Security" }),
+                                    "Select Role",
+                                    new { @class = "form-select", id = "roleDropdown" })
+                                @Html.ValidationMessageFor(m => m.Role, "", new { @class = "text-danger small" })
+                            </div>
+
+                            <div class="form-group" id="residenceDropdown" style="display:none;">
+                                @Html.Label("Residence", new { @class = "form-label" })
+                                @Html.DropDownListFor(m => m.ResidenceID,
+                                    new SelectList(ViewBag.Residences as List<DUTResManagementSystem.Models.Residence>, "ResidenceID", "Name"),
+                                    "Select Residence",
+                                    new { @class = "form-select" })
+                                @Html.ValidationMessageFor(m => m.ResidenceID, "", new { @class = "text-danger small" })
+                                <div class="form-text">Building Managers and Security must be assigned to a residence</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="auth-divider">
+                    <span>ready to join?</span>
+                </div>
+
+                <div class="auth-footer">
+                    <p>
+                        Already have an account?
+                        @Html.ActionLink("Login here", "StudentLogin", "Auth", null, new { @class = "auth-link" })
+                    </p>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-user-plus me-2"></i>Create Account
+                    </button>
+                </div>
+
+                <div class="text-center mt-3">
+                    <a href="@Url.Action("Index", "Home")" class="btn btn-outline-secondary btn-sm">
+                        <i class="fas fa-arrow-left me-1"></i>Back to Home
+                    </a>
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        $(document).ready(function () {
+            function toggleStaffResidence() {
+                if ($('#roleDropdown').val() === 'Building Manager' || $('#roleDropdown').val() === 'Security') {
+                    $('#residenceDropdown').show();
+                } else {
+                    $('#residenceDropdown').hide();
+                    $('#residenceDropdown select').val('');
+                }
+            }
+
+            // Toggle between student and staff fields
+            $('input[name="UserType"]').change(function () {
+                if ($(this).val() === 'Student') {
+                    $('#studentFields').show();
+                    $('#staffFields').hide();
+                } else {
+                    $('#studentFields').hide();
+                    $('#staffFields').show();
+                }
+                toggleStaffResidence();
+            });
+
+            toggleStaffResidence();
+            $('#roleDropdown').change(toggleStaffResidence);
+
+            // Initial state
+            if ($('input[name="UserType"]:checked').val() === 'Staff') {
+                $('#studentFields').hide();
+                $('#staffFields').show();
+            }
+        });
+
+        // Toggle Password field
+        document.getElementById("togglePassword")?.addEventListener("click", function () {
+            const passwordInput = document.getElementById("passwordField");
+            const eyeIcon = this.querySelector("i");
+
+            if (passwordInput.type === "password") {
+                passwordInput.type = "text";
+                eyeIcon.classList.remove("fa-eye");
+                eyeIcon.classList.add("fa-eye-slash");
+            } else {
+                passwordInput.type = "password";
+                eyeIcon.classList.remove("fa-eye-slash");
+                eyeIcon.classList.add("fa-eye");
+            }
+        });
+
+        // Toggle Confirm Password field
+        document.getElementById("toggleConfirmPassword")?.addEventListener("click", function () {
+            const confirmInput = document.getElementById("confirmPasswordField");
+            const eyeIcon = this.querySelector("i");
+
+            if (confirmInput.type === "password") {
+                confirmInput.type = "text";
+                eyeIcon.classList.remove("fa-eye");
+                eyeIcon.classList.add("fa-eye-slash");
+            } else {
+                confirmInput.type = "password";
+                eyeIcon.classList.remove("fa-eye-slash");
+                eyeIcon.classList.add("fa-eye");
+            }
+        });
+    </script>
+}
+
+<style>
+    /* CSS Variables for Blue Theme */
+    :root {
+        --primary: #3B82F6;
+        --primary-dark: #2563EB;
+        --primary-light: rgba(59,130,246,0.1);
+        --primary-gradient: linear-gradient(135deg, #3B82F6 0%, #2563EB 100%);
+    }
+
+    /* Theme-based styles that work with _Layout.cshtml */
+    .auth-wrapper {
+        width: 100%;
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: var(--bg-body);
+        padding: 2rem;
+    }
+
+    .auth-container {
+        width: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .auth-card {
+        max-width: 500px;
+        width: 100%;
+        background: var(--bg-card);
+        border: 1px solid var(--border-color);
+        border-radius: 24px;
+        padding: 2rem;
+        box-shadow: 0 25px 50px -12px var(--shadow-color);
+        transition: transform 0.3s ease;
+    }
+
+    .auth-card-wide {
+        max-width: 1000px;
+    }
+
+    .auth-card:hover {
+        transform: translateY(-5px);
+    }
+
+    .auth-logo {
+        text-align: center;
+        margin-bottom: 2rem;
+    }
+
+    .auth-logo-icon {
+        width: 80px;
+        height: 80px;
+        background: var(--primary-light);
+        border-radius: 24px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto 1rem auto;
+    }
+
+        .auth-logo-icon i {
+            font-size: 2.5rem;
+            color: var(--primary);
+        }
+
+    .auth-logo h2 {
+        font-size: 1.75rem;
+        font-weight: 700;
+        color: var(--text-primary);
+        margin-bottom: 0.5rem;
+    }
+
+    .auth-logo p {
+        font-size: 0.9rem;
+        color: var(--text-muted);
+        margin: 0;
+    }
+
+    .user-type-section {
+        margin-bottom: 1.5rem;
+    }
+
+    .user-type-options {
+        display: flex;
+        gap: 1rem;
+        margin-top: 0.5rem;
+    }
+
+    .user-type-option {
+        flex: 1;
+    }
+
+        .user-type-option input {
+            display: none;
+        }
+
+        .user-type-option label {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.75rem;
+            padding: 0.85rem;
+            background: var(--bg-elevated);
+            border: 2px solid var(--border-color);
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-weight: 600;
+            color: var(--text-muted);
+        }
+
+            .user-type-option label i {
+                font-size: 1.1rem;
+            }
+
+        .user-type-option input:checked + label,
+        .user-type-option input:checked ~ label {
+            background: var(--primary-light);
+            border-color: var(--primary);
+            color: var(--primary);
+        }
+
+        .user-type-option label:hover {
+            background: var(--hover-bg);
+            border-color: var(--hover-border);
+        }
+
+    .section-title {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        margin-bottom: 1rem;
+        padding-bottom: 0.5rem;
+        border-bottom: 1px solid var(--border-light);
+        color: var(--primary);
+        font-weight: 600;
+        font-size: 0.9rem;
+    }
+
+        .section-title i {
+            font-size: 0.9rem;
+        }
+
+    .form-group {
+        margin-bottom: 1.25rem;
+    }
+
+    .form-label {
+        display: block;
+        margin-bottom: 0.5rem;
+        font-size: 0.8rem;
+        font-weight: 600;
+        color: var(--text-muted);
+    }
+
+    .form-control, .form-select {
+        width: 100%;
+        padding: 0.75rem 1rem;
+        background: var(--bg-input);
+        border: 1px solid var(--border-color);
+        border-radius: 12px;
+        color: var(--text-primary);
+        font-size: 0.9rem;
+        transition: all 0.2s ease;
+    }
+
+        .form-control:focus, .form-select:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px var(--primary-light);
+        }
+
+        .form-control::placeholder {
+            color: var(--input-placeholder);
+        }
+
+    .input-group {
+        display: flex;
+        align-items: center;
+    }
+
+        .input-group .form-control {
+            border-radius: 12px 0 0 12px;
+            border-right: none;
+        }
+
+    .password-toggle {
+        border-radius: 0 12px 12px 0;
+        background: var(--bg-input);
+        border: 1px solid var(--border-color);
+        border-left: none;
+        color: var(--text-muted);
+        padding: 0.75rem 1rem;
+        cursor: pointer;
+        transition: all 0.2s ease;
+    }
+
+        .password-toggle:hover {
+            background: var(--primary-light);
+            color: var(--primary);
+        }
+
+    .auth-divider {
+        text-align: center;
+        margin: 1.5rem 0;
+        position: relative;
+    }
+
+        .auth-divider::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 50%;
+            width: 100%;
+            height: 1px;
+            background: var(--border-color);
+        }
+
+        .auth-divider span {
+            background: var(--bg-card);
+            padding: 0 1rem;
+            color: var(--text-muted);
+            font-size: 0.8rem;
+            position: relative;
+            z-index: 1;
+        }
+
+    .auth-footer {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        gap: 1rem;
+        margin-top: 0.5rem;
+    }
+
+        .auth-footer p {
+            color: var(--text-muted);
+            font-size: 0.85rem;
+            margin: 0;
+        }
+
+    .auth-link {
+        color: var(--primary);
+        text-decoration: none;
+        font-weight: 600;
+        transition: color 0.2s ease;
+    }
+
+        .auth-link:hover {
+            color: var(--primary-dark);
+            text-decoration: underline;
+        }
+
+    .btn-primary {
+        background: var(--primary) !important;
+        border-color: var(--primary) !important;
+        padding: 0.75rem 1.5rem;
+        font-size: 0.9rem;
+        font-weight: 600;
+        border-radius: 12px;
+        transition: all 0.2s ease;
+    }
+
+        .btn-primary:hover {
+            background: var(--primary-dark) !important;
+            border-color: var(--primary-dark) !important;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(59,130,246,0.3);
+        }
+
+    .btn-outline-secondary {
+        background: transparent;
+        border: 1px solid var(--border-color);
+        color: var(--text-muted);
+        padding: 0.4rem 1rem;
+        border-radius: 8px;
+        font-size: 0.8rem;
+        transition: all 0.2s ease;
+    }
+
+        .btn-outline-secondary:hover {
+            background: var(--hover-bg);
+            color: var(--text-primary);
+            transform: translateY(-1px);
+        }
+
+    .alert {
+        border-radius: 12px;
+        margin-bottom: 1.5rem;
+        padding: 0.75rem 1rem;
+    }
+
+    .alert-success {
+        background: rgba(34,197,94,0.1) !important;
+        border-color: rgba(34,197,94,0.2) !important;
+        color: var(--text-primary) !important;
+    }
+
+    [data-theme="light"] .alert-success {
+        background: #d4edda !important;
+        border-color: #c3e6cb !important;
+        color: #155724 !important;
+    }
+
+    .alert-danger {
+        background: rgba(239,35,60,0.1) !important;
+        border-color: rgba(239,35,60,0.2) !important;
+        color: var(--text-primary) !important;
+    }
+
+    [data-theme="light"] .alert-danger {
+        background: #f8d7da !important;
+        border-color: #f5c6cb !important;
+        color: #721c24 !important;
+    }
+
+    .form-text {
+        color: var(--text-muted-light);
+        font-size: 0.75rem;
+        margin-top: 0.25rem;
+    }
+
+    /* Responsive */
+    @@media (min-width: 1400px) {
+        .auth-card-wide {
+            max-width: 1100px;
+            padding: 2.5rem;
+        }
+
+        .auth-logo-icon {
+            width: 100px;
+            height: 100px;
+        }
+
+            .auth-logo-icon i {
+                font-size: 3rem;
+            }
+
+        .auth-logo h2 {
+            font-size: 2rem;
+        }
+
+        .form-control, .form-select, .password-toggle {
+            padding: 0.85rem 1.25rem;
+        }
+    }
+
+    @@media (max-width: 992px) {
+        .auth-card-wide {
+            max-width: 700px;
+        }
+    }
+
+    @@media (max-width: 768px) {
+        .auth-wrapper {
+            padding: 1rem;
+        }
+
+        .auth-card {
+            padding: 1.5rem;
+        }
+
+        .auth-logo-icon {
+            width: 60px;
+            height: 60px;
+        }
+
+            .auth-logo-icon i {
+                font-size: 1.75rem;
+            }
+
+        .auth-logo h2 {
+            font-size: 1.35rem;
+        }
+
+        .user-type-options {
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .auth-footer {
+            flex-direction: column;
+            text-align: center;
+        }
+    }
+
+    @@media (max-width: 576px) {
+        .auth-card {
+            padding: 1.25rem;
+        }
+
+        .form-control, .form-select, .password-toggle {
+            padding: 0.7rem 0.85rem;
+        }
+
+        .btn-primary {
+            width: 100%;
+        }
+    }
+</style>

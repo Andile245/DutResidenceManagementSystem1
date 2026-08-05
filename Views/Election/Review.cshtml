@@ -1,0 +1,99 @@
+@model IEnumerable<DUTResManagementSystem.Models.ElectionNomination>
+@using System.Linq
+@{
+    ViewBag.Title = "House Committee application review";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+    var election = ViewBag.Election as DUTResManagementSystem.Models.ResidenceElection;
+    var conductWarnings = ViewBag.ConductWarnings as Dictionary<int, string>;
+    var canReviewApplications = ViewBag.CanReviewApplications != null && (bool)ViewBag.CanReviewApplications;
+}
+
+<div class="container py-4">
+    <h2>House Committee application review</h2>
+    <p class="text-muted">@election.Title - eligibility recommendations reduce manual verification.</p>
+
+    @if (TempData["Error"] != null)
+    {
+        <div class="alert alert-danger">@TempData["Error"]</div>
+    }
+    @if (TempData["Success"] != null)
+    {
+        <div class="alert alert-success">@TempData["Success"]</div>
+    }
+
+    <div class="table-responsive">
+        <table class="table table-striped">
+            <thead>
+                <tr><th>Applicant</th><th>Position</th><th>Eligibility and conduct history</th><th>Status</th><th>Decision</th></tr>
+            </thead>
+            <tbody>
+            @foreach (var application in Model)
+            {
+                <tr>
+                    <td>@application.Student.FirstName @application.Student.LastName<br /><small>@application.Student.StudentNumber</small></td>
+                    <td>@application.Position.Name</td>
+                    <td>
+                        <strong>@application.EligibilityRecommendation</strong><br /><small>@application.EligibilityReason</small>
+                        @if (conductWarnings != null && conductWarnings.ContainsKey(application.StudentID))
+                        {
+                            <div class="alert alert-warning py-2 mt-2 mb-0"><strong>Active conduct record:</strong> @conductWarnings[application.StudentID]</div>
+                        }
+                    </td>
+                    <td>@application.Status</td>
+                    <td>
+                    @if (canReviewApplications)
+                    {
+                        using (Html.BeginForm("ReviewNomination", "Election", new { id = election.ResidenceElectionID, nominationId = application.ElectionNominationID }, FormMethod.Post, new { @class = "d-flex flex-column gap-1" }))
+                        {
+                            @Html.AntiForgeryToken()
+                            <input name="note" class="form-control form-control-sm" placeholder="Reason / information required" value="@application.ReviewNote" />
+                            <div class="btn-group">
+                                <button name="decision" value="Approve" class="btn btn-success btn-sm">Approve</button>
+                                <button name="decision" value="Info" class="btn btn-warning btn-sm">Request info</button>
+                                <button name="decision" value="Reject" class="btn btn-outline-danger btn-sm">Reject</button>
+                            </div>
+                        }
+                    }
+                    else
+                    {
+                        <small class="text-muted">Decisions are locked after voting opens.</small>
+                    }
+                    </td>
+                </tr>
+            }
+            </tbody>
+        </table>
+    </div>
+
+    @if (election.Status == "Tie Review")
+    {
+        <div class="card mt-4">
+            <div class="card-header text-bg-warning">Tie resolution required</div>
+            <div class="card-body">
+                <p>Select the applicant chosen after the formal tie-break process. The decision is recorded in the audit trail.</p>
+                @foreach (var group in Model.Where(a => a.Status == "Approved").GroupBy(a => a.Position))
+                {
+                    if (!group.Any(a => a.IsWinner))
+                    {
+                        using (Html.BeginForm("ResolveTie", "Election", new { id = election.ResidenceElectionID, positionId = group.Key.ElectionPositionID }, FormMethod.Post))
+                        {
+                            @Html.AntiForgeryToken()
+                            <div class="row mb-3">
+                                <div class="col-md-4 pt-2"><strong>@group.Key.Name</strong></div>
+                                <div class="col-md-5">
+                                    <select name="nominationId" class="form-select">
+                                    @foreach (var applicant in group.OrderByDescending(a => a.VoteCount))
+                                    {
+                                        <option value="@applicant.ElectionNominationID">@applicant.Student.FirstName @applicant.Student.LastName (@(applicant.VoteCount ?? 0) votes)</option>
+                                    }
+                                    </select>
+                                </div>
+                                <div class="col-md-3"><button class="btn btn-warning">Record decision</button></div>
+                            </div>
+                        }
+                    }
+                }
+            </div>
+        </div>
+    }
+</div>

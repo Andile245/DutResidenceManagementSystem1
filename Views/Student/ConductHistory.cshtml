@@ -1,0 +1,19 @@
+@model IEnumerable<DUTResManagementSystem.Models.StudentConductRecord>
+@{ ViewBag.Title = "My Conduct History"; Layout = "~/Views/Shared/_Layout.cshtml"; }
+<div class="container py-4">
+    <h2>My Conduct History</h2>
+    <p class="text-muted">This record contains conduct warnings issued by residence administration. Contact your building manager if you need clarification.</p>
+    @if (!Model.Any())
+    {
+        <div class="alert alert-success">No conduct warnings have been recorded.</div>
+    }
+    else
+    {
+        <div class="table-responsive"><table class="table table-striped"><thead><tr><th>Date</th><th>Severity</th><th>Reason</th><th>Status</th></tr></thead><tbody>
+        @foreach (var record in Model)
+        {
+            <tr><td>@record.IssuedAt.ToString("dd MMM yyyy")</td><td><span class="badge @(record.Severity == "Critical" ? "bg-danger" : record.Severity == "Serious" ? "bg-warning text-dark" : "bg-secondary")">@record.Severity</span></td><td>@record.Reason</td><td>@(record.IsActive ? "Active" : "Resolved")</td></tr>
+        }
+        </tbody></table></div>
+    }
+</div>

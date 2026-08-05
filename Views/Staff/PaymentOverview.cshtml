@@ -1,0 +1,284 @@
+﻿@model List<DUTResManagementSystem.ViewModels.StudentPaymentSummary>
+
+@{
+    ViewBag.Title = "Payment Overview";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<div class="page-header">
+    <div>
+        <h1><i class="fas fa-chart-bar me-2" style="color:var(--primary)"></i>Payment Overview</h1>
+        <div class="breadcrumb-text">
+            <i class="fas fa-building me-1"></i>
+            <strong>@ViewBag.ResidenceName</strong>
+            — Showing invoices up to <strong>@ViewBag.CurrentMonth</strong>
+        </div>
+    </div>
+</div>
+
+<!-- Info banner -->
+<div class="alert mb-4"
+     style="background:rgba(59,130,246,0.08);border-color:rgba(59,130,246,0.15);color:#93c5fd">
+    <i class="fas fa-info-circle me-2"></i>
+    This is a <strong>read-only overview</strong> of currently due payments.
+    Future installments are not shown until their month arrives.
+    Only the Admin can record payments — direct students to the DUT admin office if needed.
+</div>
+
+<!-- Stat Cards -->
+<div class="row g-3 mb-4">
+    <div class="col-xl-2 col-md-4 col-sm-6">
+        <div class="stat-card">
+            <div class="stat-icon blue"><i class="fas fa-users"></i></div>
+            <div>
+                <div class="stat-num">@ViewBag.TotalStudents</div>
+                <div class="stat-label">Total Students</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-xl-2 col-md-4 col-sm-6">
+        <div class="stat-card">
+            <div class="stat-icon green"><i class="fas fa-check-circle"></i></div>
+            <div>
+                <div class="stat-num">@ViewBag.FullyPaidCount</div>
+                <div class="stat-label">Fully Paid</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-xl-2 col-md-4 col-sm-6">
+        <div class="stat-card">
+            <div class="stat-icon red"><i class="fas fa-exclamation-circle"></i></div>
+            <div>
+                <div class="stat-num">@ViewBag.OverdueCount</div>
+                <div class="stat-label">Overdue</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-xl-2 col-md-4 col-sm-6">
+        <div class="stat-card">
+            <div class="stat-icon yellow"><i class="fas fa-clock"></i></div>
+            <div>
+                <div class="stat-num">@ViewBag.UnpaidCount</div>
+                <div class="stat-label">Unpaid</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-xl-2 col-md-4 col-sm-6">
+        <div class="stat-card">
+            <div class="stat-icon blue"><i class="fas fa-graduation-cap"></i></div>
+            <div>
+                <div class="stat-num">@ViewBag.NSFASCount</div>
+                <div class="stat-label">NSFAS</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-xl-2 col-md-4 col-sm-6">
+        <div class="stat-card">
+            <div class="stat-icon red"><i class="fas fa-exclamation-triangle"></i></div>
+            <div>
+                <div class="stat-num" style="font-size:0.95rem">
+                    R@(((decimal)ViewBag.TotalOutstanding).ToString("N2"))
+                </div>
+                <div class="stat-label">Total Outstanding</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Quick filter buttons -->
+<div class="d-flex gap-2 mb-3 flex-wrap">
+    <button class="btn btn-sm btn-outline-secondary" onclick="filterTable('')">
+        <i class="fas fa-list me-1"></i>All Students
+    </button>
+    <button class="btn btn-sm btn-outline-danger" onclick="filterTable('Overdue')">
+        <i class="fas fa-exclamation me-1"></i>Overdue
+    </button>
+    <button class="btn btn-sm btn-outline-warning" onclick="filterTable('Unpaid')">
+        <i class="fas fa-clock me-1"></i>Unpaid
+    </button>
+    <button class="btn btn-sm btn-outline-primary" onclick="filterTable('Partial')">
+        <i class="fas fa-adjust me-1"></i>Partial
+    </button>
+    <button class="btn btn-sm" style="border-color:rgba(59,130,246,0.4);color:#60a5fa"
+            onclick="filterTable('NSFAS')">
+        <i class="fas fa-graduation-cap me-1"></i>NSFAS
+    </button>
+    <button class="btn btn-sm btn-outline-success" onclick="filterTable('Fully Paid')">
+        <i class="fas fa-check me-1"></i>Fully Paid
+    </button>
+</div>
+
+<!-- Students Payment Table -->
+<div class="card">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <span>
+            <i class="fas fa-table me-2" style="color:var(--primary)"></i>
+            Student Payment Status — @ViewBag.CurrentMonth
+        </span>
+        <span class="badge bg-primary">@Model.Count students</span>
+    </div>
+    <div class="card-body p-0">
+        @if (Model.Any())
+        {
+            <div class="table-responsive">
+                <table class="table mb-0" id="paymentTable">
+                    <thead>
+                        <tr>
+                            <th>Student</th>
+                            <th>Student #</th>
+                            <th>Room</th>
+                            <th>Funding</th>
+                            <th>Invoiced</th>
+                            <th>Paid</th>
+                            <th>Balance</th>
+                            <th>Progress</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var s in Model)
+                        {
+                            string sc = s.PaymentStatus == "Fully Paid" || s.PaymentStatus == "NSFAS"
+                                            ? "#22c55e"
+                                      : s.PaymentStatus == "Overdue" ? "#f87171"
+                                      : s.PaymentStatus == "Partial" ? "#eab308"
+                                      : s.PaymentStatus == "No Invoice" ? "#6B6B80"
+                                      : "#A0A0B5";
+
+                            string sb = s.PaymentStatus == "Fully Paid" || s.PaymentStatus == "NSFAS"
+                                            ? "success"
+                                      : s.PaymentStatus == "Overdue" ? "danger"
+                                      : s.PaymentStatus == "Partial" ? "warning"
+                                      : "secondary";
+
+                            int pct = s.TotalInvoiced > 0
+                                ? (int)((s.TotalPaid / s.TotalInvoiced) * 100) : 0;
+
+                            <tr data-status="@s.PaymentStatus">
+                                <td>
+                                    <div style="font-weight:600;color:#E8E8F0;font-size:0.88rem">
+                                        @s.FullName
+                                    </div>
+                                    <div style="font-size:0.72rem;color:#6B6B80">@s.Email</div>
+                                </td>
+                                <td style="color:#A0A0B5;font-size:0.82rem">@s.StudentNumber</td>
+                                <td style="color:#A0A0B5;font-size:0.82rem">
+                                    @(s.RoomNumber != null ? "Room " + s.RoomNumber : "—")
+                                </td>
+                                <td>
+                                    @if (s.FundingType == "NSFAS")
+                                    {
+                                        <span class="badge"
+                                              style="background:rgba(59,130,246,0.15);color:#60a5fa;
+                                                     border:1px solid rgba(59,130,246,0.3)">
+                                            <i class="fas fa-graduation-cap me-1"></i>NSFAS
+                                        </span>
+                                    }
+                                    else if (s.FundingType == "Self-Paying")
+                                    {
+                                        <span class="badge"
+                                              style="background:rgba(34,197,94,0.15);color:#4ade80;
+                                                     border:1px solid rgba(34,197,94,0.3)">
+                                            <i class="fas fa-wallet me-1"></i>Self-Paying
+                                        </span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge bg-secondary">
+                                            <i class="fas fa-question me-1"></i>Not Set
+                                        </span>
+                                    }
+                                </td>
+                                <td style="font-size:0.85rem;color:#C8C8D8">
+                                    @(s.TotalInvoiced > 0 ? "R" + s.TotalInvoiced.ToString("N2") : "—")
+                                </td>
+                                <td style="font-size:0.85rem;color:#22c55e;font-weight:600">
+                                    @(s.TotalPaid > 0 ? "R" + s.TotalPaid.ToString("N2") : "—")
+                                </td>
+                                <td style="font-size:0.85rem;color:@sc;font-weight:600">
+                                    @if (s.Balance > 0)
+                                    {
+                                        <span>R@s.Balance.ToString("N2")</span>
+                                    }
+                                    else if (s.TotalInvoiced > 0)
+                                    {
+                                        <span style="color:#22c55e">Settled</span>
+                                    }
+                                    else
+                                    {
+                                        <span>—</span>
+                                    }
+                                </td>
+                                <td style="min-width:100px">
+                                    @if (s.InvoiceCount > 0)
+                                    {
+                                        <div class="d-flex align-items-center gap-2">
+                                            <div class="progress flex-grow-1" style="height:6px;min-width:60px">
+                                                <div class="progress-bar bg-@sb"
+                                                     style="width:@pct%"></div>
+                                            </div>
+                                            <small style="color:#6B6B80;white-space:nowrap;font-size:0.72rem">
+                                                @pct%
+                                            </small>
+                                        </div>
+                                        <div style="font-size:0.7rem;color:#6B6B80;margin-top:0.2rem">
+                                            @s.PaidInvoices/@s.InvoiceCount invoices paid
+                                            @if (s.OverdueInvoices > 0)
+                                            {
+                                                <span style="color:#f87171">
+                                                    · @s.OverdueInvoices overdue
+                                                </span>
+                                            }
+                                        </div>
+                                    }
+                                    else
+                                    {
+                                        <span style="color:#6B6B80;font-size:0.78rem">No invoices</span>
+                                    }
+                                </td>
+                                <td>
+                                    <span class="badge bg-@sb" style="font-size:0.78rem">
+                                        @if (s.PaymentStatus == "Fully Paid")
+                                        {<i class="fas fa-check me-1"></i>}
+                                        @if (s.PaymentStatus == "Overdue")
+                                        {<i class="fas fa-exclamation me-1"></i>}
+                                        @if (s.PaymentStatus == "NSFAS")
+                                        {<i class="fas fa-graduation-cap me-1"></i>}
+                                        @s.PaymentStatus
+                                    </span>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+        else
+        {
+            <div class="text-center py-5" style="color:#6B6B80">
+                <i class="fas fa-users fa-3x mb-3"></i>
+                <h5>No students allocated to your residence yet</h5>
+            </div>
+        }
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        var dataTable;
+        $(document).ready(function () {
+            dataTable = $('#paymentTable').DataTable({
+                pageLength: 25,
+                order: [[8, 'asc']]
+            });
+        });
+
+        function filterTable(status) {
+            if (status === '') {
+                dataTable.column(8).search('').draw();
+            } else {
+                dataTable.column(8).search(status).draw();
+            }
+        }
+    </script>
+}

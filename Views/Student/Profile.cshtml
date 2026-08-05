@@ -1,0 +1,274 @@
+﻿@model DUTResManagementSystem.Models.Student
+
+@{
+    ViewBag.Title = "Student Profile";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<div class="page-header">
+    <div>
+        <h1><i class="fas fa-user-circle me-2" style="color:var(--primary)"></i>Student Profile</h1>
+        <div class="breadcrumb-text">Your personal information and residence details</div>
+    </div>
+    <a href="@Url.Action("Dashboard", "Student")" class="btn btn-secondary btn-sm">
+        <i class="fas fa-arrow-left me-2"></i>Back to Dashboard
+    </a>
+</div>
+
+@if (TempData["SuccessMessage"] != null)
+{
+    <div class="alert alert-success alert-dismissible fade show mb-3">
+        <i class="fas fa-check-circle me-2"></i>@TempData["SuccessMessage"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+}
+@if (TempData["ErrorMessage"] != null)
+{
+    <div class="alert alert-danger alert-dismissible fade show mb-3">
+        <i class="fas fa-exclamation-circle me-2"></i>@TempData["ErrorMessage"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+}
+
+<div class="row g-3">
+    <!-- Left Column - Profile Card -->
+    <div class="col-lg-4">
+        <div class="card text-center">
+            <div class="card-body">
+                <div style="width:120px;height:120px;border-radius:50%;background:var(--primary-light);display:flex;align-items:center;justify-content:center;margin:0 auto 1rem auto;">
+                    <i class="fas fa-user-graduate fa-4x" style="color:var(--primary)"></i>
+                </div>
+                <h4 style="color:var(--text-primary);margin-bottom:0.25rem">@Model.FirstName @Model.LastName</h4>
+                <p style="color:var(--text-secondary);margin-bottom:0.5rem">@Model.StudentNumber</p>
+                <span class="badge" style="background:rgba(34,197,94,0.15);color:#22c55e;border:1px solid rgba(34,197,94,0.3)">Active Student</span>
+                <hr style="border-color:var(--border-light);margin:1rem 0" />
+                <div class="text-start">
+                    <div class="d-flex justify-content-between mb-2">
+                        <span style="color:var(--text-muted)">Faculty:</span>
+                        <span style="color:var(--text-secondary)">@(Model.Faculty ?? "Not specified")</span>
+                    </div>
+                    <div class="d-flex justify-content-between mb-2">
+                        <span style="color:var(--text-muted)">Year of Study:</span>
+                        <span style="color:var(--text-secondary)">Year @Model.YearOfStudy</span>
+                    </div>
+                    <div class="d-flex justify-content-between mb-2">
+                        <span style="color:var(--text-muted)">Gender:</span>
+                        @{
+                            string genderBg = Model.Gender == "Male" ? "rgba(59,130,246,0.15)" : Model.Gender == "Female" ? "rgba(236,72,153,0.15)" : "rgba(107,114,128,0.15)";
+                            string genderColor = Model.Gender == "Male" ? "var(--primary)" : Model.Gender == "Female" ? "#ec4899" : "var(--text-muted)";
+                        }
+                        <span class="badge" style="background:@genderBg;color:@genderColor;border:1px solid @genderColor;font-size:0.72rem">@Model.Gender</span>
+                    </div>
+                    <div class="d-flex justify-content-between">
+                        <span style="color:var(--text-muted)">Registered:</span>
+                        <span style="color:var(--text-secondary)">@string.Format("{0:dd MMM yyyy}", Model.DateRegistered)</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Right Column - Personal Information -->
+    <div class="col-lg-8">
+        <div class="card">
+            <div class="card-header">
+                <i class="fas fa-info-circle me-2" style="color:var(--primary)"></i>Personal Information
+            </div>
+            <div class="card-body">
+                <div class="row mb-4">
+                    <div class="col-md-6">
+                        <label class="form-label" style="font-size:0.72rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.05em">Full Name</label>
+                        <div style="font-weight:600;color:var(--text-primary);font-size:1rem">@Model.FirstName @Model.LastName</div>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label" style="font-size:0.72rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.05em">Student Number</label>
+                        <div style="font-weight:600;color:var(--text-primary);font-size:1rem">@Model.StudentNumber</div>
+                    </div>
+                </div>
+                <div class="row mb-4">
+                    <div class="col-md-6">
+                        <label class="form-label" style="font-size:0.72rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.05em">Email Address</label>
+                        <div style="color:var(--text-secondary)">@Model.Email</div>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label" style="font-size:0.72rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.05em">Phone Number</label>
+                        <div style="color:var(--text-secondary)">@(Model.PhoneNumber ?? "Not provided")</div>
+                    </div>
+                </div>
+                <div class="row mb-4">
+                    <div class="col-md-6">
+                        <label class="form-label" style="font-size:0.72rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.05em">Residence</label>
+                        <div>
+                            @if (Model.ResidenceID != null && Model.Residence != null)
+                            {
+                                <span style="color:#22c55e">@Model.Residence.Name</span>
+                            }
+                            else
+                            {
+                                <span style="color:#f87171">Not Allocated</span>
+                            }
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label" style="font-size:0.72rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.05em">Room</label>
+                        <div>
+                            @if (Model.Room != null)
+                            {
+                                <span style="color:var(--text-secondary)">Room @Model.Room.RoomNumber (@Model.Room.RoomType)</span>
+                            }
+                            else
+                            {
+                                <span style="color:var(--text-muted)">Not assigned</span>
+                            }
+                        </div>
+                    </div>
+                </div>
+                <hr style="border-color:var(--border-light)" />
+                <div class="d-flex gap-3 flex-wrap">
+                    <a href="@Url.Action("DownloadProofOfRegistration", "Student")" class="btn btn-outline-success">
+                        <i class="fas fa-download me-2"></i>Download Proof of Registration
+                    </a>
+                    <a href="@Url.Action("EmailProofOfRegistration", "Student")" class="btn btn-outline-primary" id="emailProofBtn">
+                        <i class="fas fa-envelope me-2"></i>Email Proof of Registration
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    /* Card Styles */
+    .card {
+        background: var(--bg-card) !important;
+        border: 1px solid var(--border-color) !important;
+        border-radius: 12px !important;
+    }
+
+    .card-header {
+        background: var(--card-header-bg) !important;
+        border-bottom: 1px solid var(--border-light) !important;
+        border-radius: 12px 12px 0 0 !important;
+        padding: 1rem 1.25rem;
+        font-weight: 600;
+        color: var(--text-primary);
+    }
+
+    .card-body {
+        background: var(--bg-card) !important;
+    }
+
+    /* Page Header */
+    .page-header {
+        margin-bottom: 1.5rem;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 1rem;
+    }
+
+        .page-header h1 {
+            font-family: 'Roboto', sans-serif;
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--text-primary);
+            margin: 0;
+        }
+
+    .breadcrumb-text {
+        font-size: 0.85rem;
+        color: var(--text-muted);
+        margin-top: 0.25rem;
+    }
+
+    /* Buttons */
+    .btn-secondary {
+        background: var(--bg-elevated) !important;
+        border-color: var(--border-color) !important;
+        color: var(--text-primary) !important;
+        transition: all 0.2s ease;
+    }
+
+        .btn-secondary:hover {
+            background: var(--hover-bg) !important;
+            transform: translateY(-1px);
+        }
+
+    .btn-outline-success {
+        color: #22c55e !important;
+        border-color: #22c55e !important;
+    }
+
+        .btn-outline-success:hover {
+            background: #22c55e !important;
+            color: white !important;
+        }
+
+    .btn-outline-primary {
+        color: var(--primary) !important;
+        border-color: var(--primary) !important;
+    }
+
+        .btn-outline-primary:hover {
+            background: var(--primary) !important;
+            color: white !important;
+        }
+
+    /* Alerts */
+    .alert-success {
+        background: rgba(34,197,94,0.1) !important;
+        border: 1px solid rgba(34,197,94,0.2) !important;
+        color: var(--text-primary) !important;
+        border-radius: 12px;
+    }
+
+    [data-theme="light"] .alert-success {
+        background: #d4edda !important;
+        color: #155724 !important;
+        border-color: #c3e6cb !important;
+    }
+
+    .alert-danger {
+        background: rgba(239,68,68,0.1) !important;
+        border: 1px solid rgba(239,68,68,0.2) !important;
+        color: #ef4444 !important;
+        border-radius: 12px;
+    }
+
+    [data-theme="light"] .alert-danger {
+        background: #f8d7da !important;
+        color: #721c24 !important;
+        border-color: #f5c6cb !important;
+    }
+
+    /* Light mode overrides */
+    [data-theme="light"] .card-header {
+        color: #1a1a2e;
+    }
+
+    [data-theme="light"] .btn-secondary {
+        background: #f8f9fa !important;
+        border-color: #dee2e6 !important;
+        color: #1a1a2e !important;
+    }
+
+        [data-theme="light"] .btn-secondary:hover {
+            background: #e9ecef !important;
+        }
+</style>
+
+@section Scripts {
+    <script>
+        $('#emailProofBtn').click(function (e) {
+            var btn = $(this);
+            var originalText = btn.html();
+            btn.html('<i class="fas fa-spinner fa-spin me-2"></i>Sending...');
+            btn.prop('disabled', true);
+            setTimeout(function () {
+                btn.html(originalText);
+                btn.prop('disabled', false);
+            }, 3000);
+        });
+    </script>
+}

@@ -1,0 +1,126 @@
+@model DUTResManagementSystem.Models.ResidenceElection
+@using DUTResManagementSystem.Models
+@{
+    ViewBag.Title = "Election details";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+    var candidates = ViewBag.Candidates as List<ElectionNomination> ?? new List<ElectionNomination>();
+    var canManage = ViewBag.CanManage != null && (bool)ViewBag.CanManage;
+    var hasApplied = ViewBag.HasApplied != null && (bool)ViewBag.HasApplied;
+    var canVote = ViewBag.CanVote != null && (bool)ViewBag.CanVote;
+    var votingUnavailableReason = ViewBag.VotingUnavailableReason as string;
+}
+
+<div class="container py-4">
+    <a href="@Url.Action("Index")" class="text-muted">All elections</a>
+    <div class="d-flex justify-content-between align-items-start mt-3">
+        <div>
+            <h2>@Model.Title</h2>
+            <p class="text-muted">@Model.Residence.Name - <strong>@Model.Status</strong></p>
+        </div>
+        <div>
+            @if (Session["StudentID"] != null && hasApplied)
+            {
+                <a class="btn btn-outline-secondary" href="@Url.Action("MyApplication", new { id = Model.ResidenceElectionID })">My application</a>
+            }
+            else if (Session["StudentID"] != null && Model.Status == "Applications Open")
+            {
+                <a class="btn btn-outline-danger" href="@Url.Action("Apply", new { id = Model.ResidenceElectionID })">Apply for a position</a>
+            }
+            @if (canVote)
+            {
+                <a class="btn btn-danger" href="@Url.Action("Ballot", new { id = Model.ResidenceElectionID })">Vote now</a>
+            }
+            @if (canManage)
+            {
+                <a class="btn btn-outline-secondary" href="@Url.Action("Dashboard", new { id = Model.ResidenceElectionID })">Analytics</a>
+                <a class="btn btn-outline-secondary" href="@Url.Action("Review", new { id = Model.ResidenceElectionID })">Review applications</a>
+            }
+            @if (Session["UserType"] as string == "Admin")
+            {
+                if (Model.Status == "Draft")
+                {
+                    using (Html.BeginForm("Publish", "Election", new { id = Model.ResidenceElectionID }, FormMethod.Post, new { @class = "d-inline" }))
+                    {
+                        @Html.AntiForgeryToken()
+                        <button type="submit" class="btn btn-danger">Publish election</button>
+                    }
+                }
+                if (Model.Status == "Draft" || Model.Status == "Scheduled" || Model.Status == "Applications Open" || Model.Status == "Candidate Review" || Model.Status == "Campaign" || Model.Status == "Candidate Review Required")
+                {
+                    using (Html.BeginForm("Cancel", "Election", new { id = Model.ResidenceElectionID }, FormMethod.Post, new { @class = "d-inline" }))
+                    {
+                        @Html.AntiForgeryToken()
+                        <button type="submit" class="btn btn-outline-danger">Cancel election</button>
+                    }
+                }
+                <a class="btn btn-outline-danger" href="@Url.Action("EditSchedule", new { id = Model.ResidenceElectionID })">Edit schedule</a>
+                if (Model.Status == "Results Published")
+                {
+                    using (Html.BeginForm("ResendResultsNotifications", "Election", new { id = Model.ResidenceElectionID }, FormMethod.Post, new { @class = "d-inline" }))
+                    {
+                        @Html.AntiForgeryToken()
+                        <button type="submit" class="btn btn-danger">Resend results</button>
+                    }
+                }
+            }
+        </div>
+    </div>
+
+    @if (TempData["Success"] != null) { <div class="alert alert-success">@TempData["Success"]</div> }
+    @if (TempData["Error"] != null) { <div class="alert alert-danger">@TempData["Error"]</div> }
+    @if (Model.Status == "Scheduled") { <div class="alert alert-info">House Committee applications open on <strong>@Model.NominationOpensAt.ToString("dd MMM yyyy HH:mm")</strong>.</div> }
+    @if (Model.Status == "Draft") { <div class="alert alert-secondary">This election is a draft and is not visible to students until it is published.</div> }
+    @if (Model.Status == "Completed") { <div class="alert alert-info">Votes have been counted. Results will be published on <strong>@Model.ResultsPublicationAt.ToString("dd MMM yyyy HH:mm")</strong>.</div> }
+    @if (Model.Status == "Archived") { <div class="alert alert-secondary">This election is archived and read-only.</div> }
+    @if (Model.Status == "Candidate Review") { <div class="alert alert-info">Applications are closed and are being reviewed before the campaign starts.</div> }
+    @if (Model.Status == "Candidate Review Required") { <div class="alert alert-warning">Voting cannot open until every committee position has at least one approved candidate.</div> }
+    @if (Model.Status == "Voting Open")
+    {
+        if (canVote)
+        {
+            <div class="alert alert-danger d-flex justify-content-between align-items-center">
+                <span><strong>Voting is open.</strong> Submit one anonymous ballot for every committee position.</span>
+                <a class="btn btn-danger" href="@Url.Action("Ballot", new { id = Model.ResidenceElectionID })">Vote now</a>
+            </div>
+        }
+        else
+        {
+            <div class="alert alert-warning"><strong>Voting is open, but it is unavailable for this account.</strong> @votingUnavailableReason</div>
+        }
+    }
+
+    <div class="card mb-4">
+        <div class="card-body">
+            <h5>Election schedule</h5>
+            <div class="row">
+                <div class="col">Applications<br /><small>@Model.NominationOpensAt.ToString("dd MMM HH:mm") - @Model.NominationClosesAt.ToString("dd MMM HH:mm")</small></div>
+                <div class="col">Campaign<br /><small>From @Model.CampaignOpensAt.ToString("dd MMM HH:mm")</small></div>
+                <div class="col">Voting<br /><small>@Model.VotingOpensAt.ToString("dd MMM HH:mm") - @Model.VotingClosesAt.ToString("dd MMM HH:mm")</small></div>
+            </div>
+        </div>
+    </div>
+
+    <h4>Candidate campaign pages</h4>
+    @if (!candidates.Any())
+    {
+        <div class="alert alert-light border">Approved candidate profiles will appear here after applications are reviewed.</div>
+    }
+    else
+    {
+        <div class="row">
+            @foreach (var candidate in candidates)
+            {
+                <div class="col-md-6 mb-3">
+                    <div class="card h-100"><div class="card-body">
+                        @if (!String.IsNullOrWhiteSpace(candidate.ProfilePhotoPath)) { <img src="@candidate.ProfilePhotoPath" class="rounded float-end" style="width:72px;height:72px;object-fit:cover" alt="Candidate profile photo" /> }
+                        <h5>@candidate.Student.FirstName @candidate.Student.LastName</h5>
+                        <small class="text-danger">@candidate.Position.Name</small>
+                        <p class="mt-3 mb-1"><strong>Manifesto</strong></p><p style="white-space:pre-line">@candidate.Manifesto</p>
+                        <p class="mb-1"><strong>Why I should serve</strong></p><p style="white-space:pre-line">@candidate.Motivation</p>
+                        @if (Model.Status == "Results Published") { <span class="badge @(candidate.IsWinner ? "bg-success" : "bg-secondary")">@(candidate.IsWinner ? "Elected" : "Not elected") - @candidate.VoteCount votes</span> }
+                    </div></div>
+                </div>
+            }
+        </div>
+    }
+</div>

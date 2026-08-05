@@ -1,0 +1,422 @@
+﻿@model List<DUTResManagementSystem.Models.Maintenance>
+
+@{
+    ViewBag.Title = "Maintenance Requests";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+    bool hasRoom = ViewBag.HasRoom == true;
+}
+
+<div class="page-header">
+    <div>
+        <h1><i class="fas fa-tools me-2" style="color:var(--primary)"></i>My Maintenance Requests</h1>
+        <div class="breadcrumb-text">View all your reported maintenance issues</div>
+    </div>
+    <div class="d-flex gap-2">
+        @if (hasRoom)
+        {
+            <a href="@Url.Action("ReportMaintenance", "Student")" class="btn btn-primary btn-sm">
+                <i class="fas fa-plus me-2"></i>Report New Issue
+            </a>
+        }
+        <a href="@Url.Action("Dashboard", "Student")" class="btn btn-secondary btn-sm">
+            <i class="fas fa-arrow-left me-2"></i>Back to Dashboard
+        </a>
+    </div>
+</div>
+
+@if (TempData["SuccessMessage"] != null)
+{
+    <div class="alert alert-success alert-dismissible fade show mb-3">
+        <i class="fas fa-check-circle me-2"></i>@TempData["SuccessMessage"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+}
+@if (TempData["ErrorMessage"] != null)
+{
+    <div class="alert alert-danger alert-dismissible fade show mb-3">
+        <i class="fas fa-exclamation-circle me-2"></i>@TempData["ErrorMessage"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+}
+
+<!-- Room required warning banner -->
+@if (!hasRoom)
+{
+    <div class="alert alert-warning mb-4">
+        <i class="fas fa-exclamation-triangle me-2"></i>
+        <strong>Room Not Assigned:</strong> You need to be allocated to a room before you can submit a maintenance request. Please contact your building manager.
+    </div>
+}
+
+<!-- Stat Cards -->
+<div class="row g-3 mb-4">
+    <div class="col-md-3">
+        <div class="stat-card">
+            <div class="stat-icon" style="background:rgba(245,158,11,0.15);color:#f59e0b">
+                <i class="fas fa-clock"></i>
+            </div>
+            <div>
+                <div class="stat-num">@Model.Count(m => m.Status == "Pending")</div>
+                <div class="stat-label">Pending</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="stat-card">
+            <div class="stat-icon" style="background:rgba(59,130,246,0.15);color:var(--primary)">
+                <i class="fas fa-spinner"></i>
+            </div>
+            <div>
+                <div class="stat-num">@Model.Count(m => m.Status == "In Progress")</div>
+                <div class="stat-label">In Progress</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="stat-card">
+            <div class="stat-icon" style="background:rgba(34,197,94,0.15);color:#22c55e">
+                <i class="fas fa-check-circle"></i>
+            </div>
+            <div>
+                <div class="stat-num">@Model.Count(m => m.Status == "Resolved")</div>
+                <div class="stat-label">Resolved</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="stat-card">
+            <div class="stat-icon" style="background:rgba(239,68,68,0.15);color:#ef4444">
+                <i class="fas fa-list"></i>
+            </div>
+            <div>
+                <div class="stat-num">@Model.Count()</div>
+                <div class="stat-label">Total</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-header">
+        <i class="fas fa-tools me-2" style="color:var(--primary)"></i>My Maintenance History
+    </div>
+    <div class="card-body p-0">
+        @if (Model.Any())
+        {
+            <div class="table-responsive">
+                <table class="table mb-0" id="maintenanceTable">
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>Room</th>
+                            <th>Issue</th>
+                            <th>Status</th>
+                            <th>Resolved Date</th>
+                            <th>Image</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var request in Model)
+                        {
+                            string statusClass = request.Status == "Pending" ? "warning" : request.Status == "In Progress" ? "primary" : "success";
+                            string statusBg = request.Status == "Pending" ? "rgba(245,158,11,0.15)" : request.Status == "In Progress" ? "rgba(59,130,246,0.15)" : "rgba(34,197,94,0.15)";
+                            string statusColor = request.Status == "Pending" ? "#f59e0b" : request.Status == "In Progress" ? "var(--primary)" : "#22c55e";
+                            <tr>
+                                <td style="font-size:0.82rem;color:var(--text-muted);white-space:nowrap">@request.DateReported.ToString("dd MMM yyyy")</td>
+                                <td style="color:var(--text-secondary);font-size:0.85rem">@request.RoomNumber</td>
+                                <td style="font-size:0.82rem;max-width:300px;color:var(--text-secondary)">
+                                    @(request.IssueDescription.Length > 60 ? request.IssueDescription.Substring(0,60) + "..." : request.IssueDescription)
+                                </td>
+                                <td>
+                                    <span class="badge" style="background:@statusBg;color:@statusColor;border:1px solid @statusColor">
+                                        @request.Status
+                                    </span>
+                                </td>
+                                <td style="font-size:0.78rem;color:var(--text-muted)">
+                                    @(request.DateResolved.HasValue ? request.DateResolved.Value.ToString("dd MMM yyyy") : "—")
+                                </td>
+                                <td>
+                                    @if (!string.IsNullOrEmpty(request.ImagePath))
+                                    {
+                                        <a href="@request.ImagePath" target="_blank">
+                                            <img src="@request.ImagePath" width="40" height="40" style="border-radius:6px;object-fit:cover;border:1px solid var(--border-light)" />
+                                        </a>
+                                    }
+                                    else
+                                    {
+                                        <span style="color:var(--text-muted);font-size:0.78rem">—</span>
+                                    }
+                                </td>
+                                <td style="white-space:nowrap">
+                                    @if (request.Status == "Resolved" && !request.IsConfirmedByStudent)
+                                    {
+                                        <form method="post" action="@Url.Action("ConfirmResolution", "Student")" style="display:inline-block">
+                                            @Html.AntiForgeryToken()
+                                            <input type="hidden" name="maintenanceId" value="@request.MaintenanceID" />
+                                            <button type="submit" class="btn btn-success btn-sm" style="font-size:0.75rem;padding:0.25rem 0.5rem">
+                                                <i class="fas fa-check me-1"></i>Confirm
+                                            </button>
+                                        </form>
+                                    }
+                                    else if (request.IsConfirmedByStudent)
+                                    {
+                                        <button class="btn btn-secondary btn-sm" disabled style="font-size:0.75rem;padding:0.25rem 0.5rem">
+                                            <i class="fas fa-check-circle me-1"></i>Confirmed
+                                        </button>
+                                    }
+                                    else
+                                    {
+                                        <span style="color:var(--text-muted);font-size:0.78rem">—</span>
+                                    }
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+        else
+        {
+            <div class="text-center py-5" style="color:var(--text-muted)">
+                <i class="fas fa-tools fa-3x mb-3"></i>
+                <h5>No maintenance requests yet</h5>
+                @if (hasRoom)
+                {
+                    <p class="mb-0">You haven't reported any maintenance issues yet.</p>
+                    <a href="@Url.Action("ReportMaintenance", "Student")" class="btn btn-primary mt-3">Report Your First Issue</a>
+                }
+                else
+                {
+                    <p class="mb-0">You need a room assignment before you can report maintenance issues.</p>
+                }
+            </div>
+        }
+    </div>
+</div>
+
+<style>
+    /* Stat Cards */
+    .stat-card {
+        background: var(--bg-card) !important;
+        border: 1px solid var(--border-color) !important;
+        border-radius: 12px;
+        padding: 1.25rem;
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        transition: transform 0.2s, border-color 0.2s;
+    }
+
+        .stat-card:hover {
+            transform: translateY(-2px);
+            border-color: var(--primary) !important;
+        }
+
+    .stat-num {
+        font-family: 'Roboto', sans-serif;
+        font-size: 1.8rem;
+        font-weight: 700;
+        color: var(--text-primary);
+        line-height: 1;
+    }
+
+    .stat-label {
+        font-size: 0.78rem;
+        color: var(--text-muted);
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        margin-top: 0.2rem;
+    }
+
+    .stat-icon {
+        width: 52px;
+        height: 52px;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.4rem;
+        flex-shrink: 0;
+    }
+
+    /* Card */
+    .card {
+        background: var(--bg-card) !important;
+        border: 1px solid var(--border-color) !important;
+        border-radius: 12px !important;
+    }
+
+    .card-header {
+        background: var(--card-header-bg) !important;
+        border-bottom: 1px solid var(--border-light) !important;
+        border-radius: 12px 12px 0 0 !important;
+        padding: 1rem 1.25rem;
+        font-weight: 600;
+        color: var(--text-primary);
+    }
+
+    .card-body {
+        background: var(--bg-card) !important;
+    }
+
+    /* Table */
+    .table {
+        color: var(--text-secondary) !important;
+    }
+
+        .table thead th {
+            background: var(--bg-elevated) !important;
+            color: var(--text-primary) !important;
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            border-color: var(--border-light) !important;
+            font-weight: 600;
+        }
+
+        .table tbody tr {
+            border-color: var(--border-light) !important;
+        }
+
+            .table tbody tr:hover {
+                background: var(--table-hover) !important;
+            }
+
+        .table td, .table th {
+            border-color: var(--border-light) !important;
+            color: var(--text-secondary);
+        }
+
+    /* Page Header */
+    .page-header {
+        margin-bottom: 1.5rem;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 1rem;
+    }
+
+        .page-header h1 {
+            font-family: 'Roboto', sans-serif;
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--text-primary);
+            margin: 0;
+        }
+
+    .breadcrumb-text {
+        font-size: 0.85rem;
+        color: var(--text-muted);
+        margin-top: 0.25rem;
+    }
+
+    /* Buttons */
+    .btn-primary {
+        background: var(--primary) !important;
+        border-color: var(--primary) !important;
+    }
+
+        .btn-primary:hover {
+            background: var(--primary-dark) !important;
+            border-color: var(--primary-dark) !important;
+            transform: translateY(-1px);
+        }
+
+    .btn-secondary {
+        background: var(--bg-elevated) !important;
+        border-color: var(--border-color) !important;
+        color: var(--text-primary) !important;
+    }
+
+        .btn-secondary:hover {
+            background: var(--hover-bg) !important;
+            transform: translateY(-1px);
+        }
+
+    .btn-success {
+        background: #22c55e !important;
+        border-color: #22c55e !important;
+    }
+
+        .btn-success:hover {
+            background: #16a34a !important;
+            border-color: #16a34a !important;
+            transform: translateY(-1px);
+        }
+
+    /* Alerts */
+    .alert-success {
+        background: rgba(34,197,94,0.1) !important;
+        border: 1px solid rgba(34,197,94,0.2) !important;
+        color: var(--text-primary) !important;
+        border-radius: 12px;
+    }
+
+    [data-theme="light"] .alert-success {
+        background: #d4edda !important;
+        color: #155724 !important;
+        border-color: #c3e6cb !important;
+    }
+
+    .alert-danger {
+        background: rgba(239,68,68,0.1) !important;
+        border: 1px solid rgba(239,68,68,0.2) !important;
+        color: var(--text-primary) !important;
+        border-radius: 12px;
+    }
+
+    [data-theme="light"] .alert-danger {
+        background: #f8d7da !important;
+        color: #721c24 !important;
+        border-color: #f5c6cb !important;
+    }
+
+    .alert-warning {
+        background: rgba(245,158,11,0.1) !important;
+        border: 1px solid rgba(245,158,11,0.2) !important;
+        color: var(--text-primary) !important;
+        border-radius: 12px;
+    }
+
+    [data-theme="light"] .alert-warning {
+        background: #fff3cd !important;
+        color: #856404 !important;
+        border-color: #ffeeba !important;
+    }
+
+    /* Light mode overrides */
+    [data-theme="light"] .stat-num {
+        color: #1a1a2e;
+    }
+
+    [data-theme="light"] .card-header {
+        color: #1a1a2e;
+    }
+
+    [data-theme="light"] .table td,
+    [data-theme="light"] .table th {
+        color: #2d3436 !important;
+    }
+</style>
+
+@section Scripts {
+    <script>
+        $(document).ready(function () {
+            $('#maintenanceTable').DataTable({
+                pageLength: 10,
+                order: [[0, 'desc']],
+                language: {
+                    search: "Search:",
+                    lengthMenu: "Show _MENU_ entries",
+                    info: "Showing _START_ to _END_ of _TOTAL_ requests",
+                    paginate: {
+                        previous: "Previous",
+                        next: "Next"
+                    }
+                }
+            });
+        });
+    </script>
+}

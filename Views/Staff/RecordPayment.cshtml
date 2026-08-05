@@ -1,0 +1,132 @@
+﻿@model DUTResManagementSystem.ViewModels.RecordPaymentViewModel
+
+@{
+    ViewBag.Title = "Record Payment";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<div class="page-header">
+    <div>
+        <h1><i class="fas fa-cash-register me-2" style="color:var(--primary)"></i>Record Payment</h1>
+        <div class="breadcrumb-text">Recording payment for <strong>@Model.StudentName</strong></div>
+    </div>
+    <a href="@Url.Action("FeeManagement", "Staff")" class="btn btn-secondary btn-sm">
+        <i class="fas fa-arrow-left me-1"></i>Back
+    </a>
+</div>
+
+<!-- Invoice Summary -->
+<div class="row g-3 mb-4">
+    <div class="col-md-3">
+        <div class="stat-card">
+            <div class="stat-icon blue"><i class="fas fa-file-invoice"></i></div>
+            <div><div class="stat-num" style="font-size:1rem">@Model.InvoiceNumber</div><div class="stat-label">Invoice Number</div></div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="stat-card">
+            <div class="stat-icon yellow"><i class="fas fa-money-bill"></i></div>
+            <div><div class="stat-num" style="font-size:1.2rem">R @Model.InvoiceAmount.ToString("N2")</div><div class="stat-label">Invoice Amount</div></div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="stat-card">
+            <div class="stat-icon green"><i class="fas fa-check-circle"></i></div>
+            <div><div class="stat-num" style="font-size:1.2rem">R @Model.AmountPaid.ToString("N2")</div><div class="stat-label">Already Paid</div></div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="stat-card">
+            <div class="stat-icon red"><i class="fas fa-exclamation-circle"></i></div>
+            <div><div class="stat-num" style="font-size:1.2rem">R @Model.Balance.ToString("N2")</div><div class="stat-label">Outstanding Balance</div></div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-3">
+    <div class="col-lg-6">
+        <div class="card">
+            <div class="card-header"><i class="fas fa-plus me-2" style="color:var(--primary)"></i>Record New Payment</div>
+            <div class="card-body">
+                @using (Html.BeginForm("RecordPayment", "Staff", FormMethod.Post, new { enctype = "multipart/form-data" }))
+                {
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="invoiceId" value="@Model.InvoiceID" />
+
+                    <div class="mb-3">
+                        <label class="form-label">Payment Amount (R) *</label>
+                        <input type="number" class="form-control" name="paymentAmount"
+                               placeholder="@Model.Balance.ToString("N2")"
+                               max="@Model.Balance" min="0.01" step="0.01" required />
+                        <div class="form-text">Maximum payable: R @Model.Balance.ToString("N2")</div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Payment Method *</label>
+                        <select class="form-select" name="paymentMethod" id="paymentMethod"
+                                onchange="toggleProofUpload(this.value)" required>
+                            <option value="">-- Select Method --</option>
+                            <option value="Cash">Cash (paid at office)</option>
+                            <option value="EFT">EFT / Bank Transfer</option>
+                        </select>
+                    </div>
+
+                    <!-- Proof of payment — only shown for EFT -->
+                    <div class="mb-3" id="proofDiv" style="display:none">
+                        <label class="form-label">Proof of Payment (PDF or Image)</label>
+                        <input type="file" class="form-control" name="proofFile"
+                               accept=".pdf,.jpg,.jpeg,.png" />
+                        <div class="form-text">Upload the EFT confirmation or bank receipt.</div>
+                    </div>
+
+                    <div class="mb-4">
+                        <label class="form-label">Notes (Optional)</label>
+                        <textarea class="form-control" name="notes" rows="2"
+                                  placeholder="Any additional notes about this payment..."></textarea>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary w-100"
+                            onclick="return confirm('Record this payment? A receipt will be emailed to the student.')">
+                        <i class="fas fa-check me-2"></i>Confirm &amp; Record Payment
+                    </button>
+                }
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-6">
+        <div class="card">
+            <div class="card-header"><i class="fas fa-info-circle me-2" style="color:var(--primary)"></i>Student Details</div>
+            <div class="card-body">
+                <div class="mb-3 pb-3" style="border-bottom:1px solid rgba(255,255,255,0.06)">
+                    <div style="font-size:0.72rem;color:#6B6B80;text-transform:uppercase;font-weight:600;margin-bottom:0.25rem">Student Name</div>
+                    <div style="color:#E8E8F0;font-weight:600">@Model.StudentName</div>
+                </div>
+                <div class="mb-3 pb-3" style="border-bottom:1px solid rgba(255,255,255,0.06)">
+                    <div style="font-size:0.72rem;color:#6B6B80;text-transform:uppercase;font-weight:600;margin-bottom:0.25rem">Invoice Number</div>
+                    <div style="color:#E8E8F0;font-family:monospace">@Model.InvoiceNumber</div>
+                </div>
+                <div class="mb-3 pb-3" style="border-bottom:1px solid rgba(255,255,255,0.06)">
+                    <div style="font-size:0.72rem;color:#6B6B80;text-transform:uppercase;font-weight:600;margin-bottom:0.25rem">Total Invoice</div>
+                    <div style="color:#E8E8F0;font-weight:700">R @Model.InvoiceAmount.ToString("N2")</div>
+                </div>
+                <div class="mb-3 pb-3" style="border-bottom:1px solid rgba(255,255,255,0.06)">
+                    <div style="font-size:0.72rem;color:#6B6B80;text-transform:uppercase;font-weight:600;margin-bottom:0.25rem">Amount Already Paid</div>
+                    <div style="color:#22c55e;font-weight:700">R @Model.AmountPaid.ToString("N2")</div>
+                </div>
+                <div>
+                    <div style="font-size:0.72rem;color:#6B6B80;text-transform:uppercase;font-weight:600;margin-bottom:0.25rem">Outstanding Balance</div>
+                    <div style="color:#f87171;font-weight:700;font-size:1.2rem">R @Model.Balance.ToString("N2")</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        function toggleProofUpload(val) {
+            document.getElementById('proofDiv').style.display = val === 'EFT' ? 'block' : 'none';
+        }
+    </script>
+}

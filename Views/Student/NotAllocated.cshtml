@@ -1,0 +1,77 @@
+@{
+    ViewBag.Title = "Pending Allocation";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-6">
+
+            <!-- Main holding card -->
+            <div class="card text-center">
+                <div class="card-body py-5 px-4">
+
+                    <!-- Icon -->
+                    <div style="width:80px;height:80px;border-radius:50%;background:rgba(234,179,8,0.12);display:flex;align-items:center;justify-content:center;margin:0 auto 1.5rem auto;">
+                        <i class="fas fa-home fa-3x" style="color:#eab308"></i>
+                    </div>
+
+                    <!-- Greeting -->
+                    <h3 style="color:#E8E8F0;margin-bottom:0.5rem">Hi, @ViewBag.StudentName!</h3>
+                    <p style="color:#A0A0B5;margin-bottom:1.5rem">You are not yet allocated to a residence</p>
+
+                    <!-- Info message -->
+                    <div class="alert alert-warning text-start mb-4">
+                        <div class="d-flex align-items-start gap-3">
+                            <i class="fas fa-exclamation-triangle mt-1" style="color:#eab308"></i>
+                            <div>
+                                <strong>Access Restricted</strong>
+                                <p class="mb-0 mt-1" style="font-size:0.85rem">
+                                    You will be able to access the full student dashboard once you have been
+                                    allocated to a residence by the administration.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- What happens next -->
+                    <div class="text-start mb-4" style="background:rgba(255,255,255,0.03);border-radius:12px;padding:1rem">
+                        <h6 style="color:#E8E8F0;margin-bottom:0.75rem"><i class="fas fa-list-ol me-2" style="color:var(--primary)"></i>What happens next?</h6>
+                        <ol style="color:#A0A0B5;margin:0;padding-left:1.25rem;font-size:0.85rem">
+                            <li class="mb-2">The administration reviews all applications and allocates students to residences.</li>
+                            <li class="mb-2">Once allocated, you will receive a confirmation email.</li>
+                            <li>Your dashboard will automatically unlock with full access.</li>
+                        </ol>
+                    </div>
+
+                    <!-- Actions -->
+                    <div class="d-flex gap-3 justify-content-center">
+                        <a href="@Url.Action("NotAllocated", "Student")" class="btn btn-outline-primary">
+                            <i class="fas fa-sync me-2"></i>Check Again
+                        </a>
+                        <a href="@Url.Action("Logout", "Student")" class="btn btn-outline-danger">
+                            <i class="fas fa-sign-out-alt me-2"></i>Logout
+                        </a>
+                    </div>
+                </div>
+
+                <!-- Footer -->
+                <div class="card-footer py-3" style="background:rgba(255,255,255,0.02)">
+                    <small style="color:#6B6B80">
+                        <i class="fas fa-envelope me-1"></i> residence@dut.ac.za
+                        &nbsp;|&nbsp;
+                        <i class="fas fa-phone me-1"></i> 031 373 2000
+                    </small>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+<script>
+    // Auto-refresh every 2 minutes to check if allocated
+    setTimeout(function () {
+        window.location.reload();
+    }, 120000);
+</script>

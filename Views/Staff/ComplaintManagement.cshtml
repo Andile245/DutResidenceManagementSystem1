@@ -1,0 +1,755 @@
+@model IEnumerable<DUTResManagementSystem.ViewModels.ComplaintManagementViewModel>
+
+@{
+    ViewBag.Title = "Complaint Management";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+    bool isAdmin = ViewBag.StaffRole == "Admin";
+
+    var total = Model.Count();
+    var pending = Model.Count(c => c.Status == "Pending");
+    var inProgress = Model.Count(c => c.Status == "In Progress");
+    var resolved = Model.Count(c => c.Status == "Resolved");
+}
+
+<style>
+    .cm-page {
+        max-width: 1400px;
+        margin: 0 auto;
+        padding: 24px;
+    }
+
+    /* Header */
+    .page-header {
+        margin-bottom: 28px;
+    }
+
+    .page-header h1 {
+        font-size: 24px;
+        font-weight: 600;
+        color: var(--text-primary);
+        margin: 0 0 6px 0;
+    }
+
+    .page-header p {
+        color: var(--text-muted);
+        margin: 0;
+        font-size: 14px;
+    }
+
+    /* Stats Cards */
+    .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 16px;
+        margin-bottom: 28px;
+    }
+
+    .stat-card {
+        background: var(--bg-card);
+        border: 1px solid var(--border-color);
+        border-radius: 12px;
+        padding: 20px;
+        text-align: center;
+        transition: all 0.2s;
+    }
+
+    .stat-card:hover {
+        border-color: var(--primary);
+        transform: translateY(-2px);
+    }
+
+    .stat-number {
+        font-size: 32px;
+        font-weight: 700;
+        color: var(--text-primary);
+        line-height: 1.2;
+    }
+
+    .stat-label {
+        font-size: 13px;
+        color: var(--text-muted);
+        margin-top: 6px;
+    }
+
+    .stat-pending .stat-number { color: #f59e0b; }
+    .stat-progress .stat-number { color: var(--primary); }
+    .stat-resolved .stat-number { color: #22c55e; }
+
+    /* Toolbar */
+    .toolbar {
+        display: flex;
+        gap: 12px;
+        flex-wrap: wrap;
+        align-items: center;
+        margin-bottom: 24px;
+    }
+
+    .search-input {
+        flex: 1;
+        min-width: 260px;
+        padding: 10px 14px;
+        background: var(--bg-input);
+        border: 1px solid var(--border-color);
+        border-radius: 8px;
+        color: var(--text-primary);
+        font-size: 14px;
+    }
+
+    .search-input:focus {
+        outline: none;
+        border-color: var(--primary);
+    }
+
+    .filter-select {
+        padding: 10px 14px;
+        background: var(--bg-input);
+        border: 1px solid var(--border-color);
+        border-radius: 8px;
+        color: var(--text-primary);
+        cursor: pointer;
+        min-width: 140px;
+    }
+
+    .result-badge {
+        background: var(--bg-elevated);
+        padding: 8px 16px;
+        border-radius: 20px;
+        font-size: 13px;
+        color: var(--text-secondary);
+    }
+
+    /* Complaint Card */
+    .complaint-card {
+        background: var(--bg-card);
+        border: 1px solid var(--border-color);
+        border-radius: 12px;
+        margin-bottom: 20px;
+        overflow: hidden;
+    }
+
+    .card-top {
+        padding: 20px 24px;
+        border-bottom: 1px solid var(--border-color);
+        display: flex;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        gap: 16px;
+    }
+
+    .status-area {
+        flex: 1;
+    }
+
+    .status-row {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        flex-wrap: wrap;
+        margin-bottom: 12px;
+    }
+
+    .status-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 4px 12px;
+        border-radius: 20px;
+        font-size: 12px;
+        font-weight: 600;
+    }
+
+    .status-badge .dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+    }
+
+    .badge-pending {
+        background: rgba(245, 158, 11, 0.15);
+        color: #f59e0b;
+        border: 1px solid rgba(245, 158, 11, 0.3);
+    }
+    .badge-pending .dot { background: #f59e0b; }
+
+    .badge-progress {
+        background: rgba(59, 130, 246, 0.15);
+        color: var(--primary);
+        border: 1px solid rgba(59, 130, 246, 0.3);
+    }
+    .badge-progress .dot { background: var(--primary); }
+
+    .badge-resolved {
+        background: rgba(34, 197, 94, 0.15);
+        color: #22c55e;
+        border: 1px solid rgba(34, 197, 94, 0.3);
+    }
+    .badge-resolved .dot { background: #22c55e; }
+
+    [data-theme="light"] .badge-pending {
+        background: #fff3cd;
+        color: #856404;
+        border-color: #ffeeba;
+    }
+    [data-theme="light"] .badge-progress {
+        background: #d1ecf1;
+        color: #0c5460;
+        border-color: #bee5eb;
+    }
+    [data-theme="light"] .badge-resolved {
+        background: #d4edda;
+        color: #155724;
+        border-color: #c3e6cb;
+    }
+
+    .complaint-id {
+        font-size: 12px;
+        color: var(--text-muted);
+    }
+
+    .complaint-category {
+        font-size: 12px;
+        color: var(--text-muted);
+        background: var(--bg-elevated);
+        padding: 2px 8px;
+        border-radius: 12px;
+    }
+
+    .complaint-title {
+        font-size: 16px;
+        font-weight: 600;
+        color: var(--text-primary);
+        margin: 8px 0;
+    }
+
+    .complaint-description {
+        font-size: 13px;
+        color: var(--text-secondary);
+        line-height: 1.5;
+        margin-bottom: 12px;
+    }
+
+    .timeline {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 20px;
+        font-size: 12px;
+        color: var(--text-muted);
+    }
+
+    .student-card {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        min-width: 180px;
+        background: var(--bg-elevated);
+        padding: 10px 16px;
+        border-radius: 10px;
+    }
+
+    .student-avatar {
+        width: 44px;
+        height: 44px;
+        border-radius: 50%;
+        background: var(--primary);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 600;
+        font-size: 16px;
+        color: white;
+    }
+
+    .student-details {
+        flex: 1;
+    }
+
+    .student-name {
+        font-weight: 600;
+        color: var(--text-primary);
+        font-size: 14px;
+    }
+
+    .student-number {
+        font-size: 11px;
+        color: var(--text-muted);
+        margin-top: 2px;
+    }
+
+    /* Card Body */
+    .card-body {
+        display: grid;
+        grid-template-columns: 1fr 340px;
+    }
+
+    .info-panel {
+        padding: 20px 24px;
+        border-right: 1px solid var(--border-color);
+    }
+
+    .info-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 16px;
+        margin-bottom: 20px;
+    }
+
+    .info-box {
+        background: var(--bg-elevated);
+        padding: 12px 14px;
+        border-radius: 10px;
+    }
+
+    .info-label {
+        font-size: 10px;
+        text-transform: uppercase;
+        color: var(--text-muted);
+        margin-bottom: 6px;
+        letter-spacing: 0.5px;
+    }
+
+    .info-value {
+        font-size: 14px;
+        font-weight: 500;
+        color: var(--text-primary);
+    }
+
+    .feedback-box {
+        background: var(--bg-elevated);
+        padding: 12px 14px;
+        border-radius: 10px;
+        margin-top: 8px;
+    }
+
+    .feedback-label {
+        font-size: 10px;
+        text-transform: uppercase;
+        color: var(--text-muted);
+        margin-bottom: 6px;
+        letter-spacing: 0.5px;
+    }
+
+    .feedback-text {
+        font-size: 13px;
+        color: var(--text-secondary);
+        line-height: 1.5;
+    }
+
+    /* Form Panel */
+    .form-panel {
+        padding: 20px 24px;
+    }
+
+    .form-title {
+        font-size: 12px;
+        font-weight: 600;
+        color: var(--text-secondary);
+        margin-bottom: 16px;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .form-group {
+        margin-bottom: 16px;
+    }
+
+    .form-group label {
+        display: block;
+        font-size: 12px;
+        font-weight: 500;
+        color: var(--text-secondary);
+        margin-bottom: 6px;
+    }
+
+    .form-control {
+        width: 100%;
+        padding: 10px 12px;
+        background: var(--bg-input);
+        border: 1px solid var(--border-color);
+        border-radius: 8px;
+        color: var(--text-primary);
+        font-size: 13px;
+        font-family: inherit;
+    }
+
+    .form-control:focus {
+        outline: none;
+        border-color: var(--primary);
+    }
+
+    textarea.form-control {
+        resize: vertical;
+        min-height: 80px;
+    }
+
+    .form-hint {
+        font-size: 11px;
+        color: var(--text-muted);
+        margin-top: 5px;
+    }
+
+    .btn-save {
+        width: 100%;
+        padding: 10px;
+        background: var(--primary);
+        border: none;
+        border-radius: 8px;
+        color: white;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+
+    .btn-save:hover {
+        background: var(--primary-dark);
+        transform: translateY(-1px);
+    }
+
+    /* Empty State */
+    .empty-state {
+        text-align: center;
+        padding: 60px 20px;
+        background: var(--bg-card);
+        border: 1px solid var(--border-color);
+        border-radius: 12px;
+    }
+
+    .empty-state h5 {
+        font-size: 16px;
+        color: var(--text-secondary);
+        margin-bottom: 8px;
+    }
+
+    .empty-state p {
+        color: var(--text-muted);
+    }
+
+    /* Toast Messages */
+    .toast-message {
+        padding: 12px 16px;
+        border-radius: 8px;
+        margin-bottom: 20px;
+        font-size: 13px;
+        transition: opacity 0.3s ease;
+    }
+
+    .toast-success {
+        background: rgba(34, 197, 94, 0.1);
+        border: 1px solid rgba(34, 197, 94, 0.3);
+        color: #22c55e;
+    }
+
+    .toast-error {
+        background: rgba(239, 68, 68, 0.1);
+        border: 1px solid rgba(239, 68, 68, 0.3);
+        color: #ef4444;
+    }
+
+    [data-theme="light"] .toast-success {
+        background: #d4edda;
+        color: #155724;
+        border-color: #c3e6cb;
+    }
+    [data-theme="light"] .toast-error {
+        background: #f8d7da;
+        color: #721c24;
+        border-color: #f5c6cb;
+    }
+
+    /* Responsive */
+    @@media (max-width: 900px) {
+        .card-body {
+            grid-template-columns: 1fr;
+        }
+        .info-panel {
+            border-right: none;
+            border-bottom: 1px solid var(--border-color);
+        }
+    }
+
+    @@media (max-width: 640px) {
+        .stats-grid {
+            grid-template-columns: repeat(2, 1fr);
+        }
+        .info-grid {
+            grid-template-columns: 1fr;
+        }
+        .card-top {
+            flex-direction: column;
+        }
+    }
+</style>
+
+<div class="cm-page">
+
+    <!-- Header -->
+    <div class="page-header">
+        <h1><i class="fas fa-bullhorn me-2" style="color:var(--primary)"></i>Complaint Management</h1>
+        <p>
+            @if (!isAdmin && ViewBag.ResidenceName != null)
+            {
+                <text>Complaints for <strong>@ViewBag.ResidenceName</strong></text>
+            }
+            else
+            {
+                <text>All student complaints across all residences</text>
+            }
+        </p>
+    </div>
+
+    <!-- Toast Messages -->
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="toast-message toast-success" id="toastSuccess">
+            <i class="fas fa-check-circle me-2"></i>@TempData["SuccessMessage"]
+        </div>
+    }
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div class="toast-message toast-error" id="toastError">
+            <i class="fas fa-exclamation-circle me-2"></i>@TempData["ErrorMessage"]
+        </div>
+    }
+
+    <!-- Statistics Cards -->
+    <div class="stats-grid">
+        <div class="stat-card">
+            <div class="stat-number">@total</div>
+            <div class="stat-label">Total Complaints</div>
+        </div>
+        <div class="stat-card stat-pending">
+            <div class="stat-number">@pending</div>
+            <div class="stat-label">Pending</div>
+        </div>
+        <div class="stat-card stat-progress">
+            <div class="stat-number">@inProgress</div>
+            <div class="stat-label">In Progress</div>
+        </div>
+        <div class="stat-card stat-resolved">
+            <div class="stat-number">@resolved</div>
+            <div class="stat-label">Resolved</div>
+        </div>
+    </div>
+
+    <!-- Search and Filter -->
+    <div class="toolbar">
+        <input type="text" id="searchInput" class="search-input" placeholder="Search by student, subject, or student number..." />
+        <select id="statusFilter" class="filter-select">
+            <option value="">All Statuses</option>
+            <option value="Pending">Pending</option>
+            <option value="In Progress">In Progress</option>
+            <option value="Resolved">Resolved</option>
+        </select>
+        <select id="categoryFilter" class="filter-select">
+            <option value="">All Categories</option>
+            @foreach (var cat in Model.Select(c => c.Category).Distinct().OrderBy(x => x))
+            {
+                <option value="@cat">@cat</option>
+            }
+        </select>
+        <span class="result-badge" id="resultCount">@total complaint@(total != 1 ? "s" : "")</span>
+    </div>
+
+    <!-- Complaint List -->
+    @if (!Model.Any())
+    {
+        <div class="empty-state">
+            <i class="fas fa-inbox fa-3x mb-3" style="color:var(--text-muted)"></i>
+            <h5>No Complaints Found</h5>
+            <p>Student complaints will appear here once submitted.</p>
+        </div>
+    }
+    else
+    {
+        <div id="complaintList">
+            @foreach (var complaint in Model)
+            {
+                var initials = string.IsNullOrWhiteSpace(complaint.StudentName) ? "?" :
+                    string.Join("", complaint.StudentName.Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries)
+                                   .Take(2).Select(w => w[0].ToString().ToUpper()));
+
+                var statusClass = complaint.Status == "Pending" ? "badge-pending" :
+                                 (complaint.Status == "In Progress" ? "badge-progress" : "badge-resolved");
+
+                var statusDisplay = complaint.Status == "In Progress" ? "In Progress" : complaint.Status;
+
+                <div class="complaint-card"
+                     data-search="@(complaint.StudentName + " " + complaint.StudentNumber + " " + complaint.Subject + " " + complaint.Category).ToLower()"
+                     data-status="@complaint.Status"
+                     data-category="@complaint.Category">
+
+                    <!-- Card Top Section -->
+                    <div class="card-top">
+                        <div class="status-area">
+                            <div class="status-row">
+                                <span class="status-badge @statusClass">
+                                    <span class="dot"></span> @statusDisplay
+                                </span>
+                                <span class="complaint-id">#@complaint.ComplaintId</span>
+                                <span class="complaint-category">@complaint.Category</span>
+                            </div>
+                            <div class="complaint-title">@complaint.Subject</div>
+                            <div class="complaint-description">@complaint.Description</div>
+                            <div class="mt-2"><strong>Reported student:</strong> @complaint.ReportedStudentName @if (!string.IsNullOrWhiteSpace(complaint.ReportedStudentNumber)) { <text>(@complaint.ReportedStudentNumber)</text> }</div>
+                            @if (complaint.WarningIssued)
+                            {
+                                <div class="alert alert-warning mt-2 mb-0 py-2"><strong>@complaint.WarningSeverity warning issued.</strong> @complaint.WarningReason</div>
+                            }
+                            <div class="timeline">
+                                <span><i class="far fa-calendar-alt me-1"></i>Submitted: @complaint.DateSubmitted.ToString("dd MMM yyyy HH:mm")</span>
+                                @if (complaint.LastUpdated.HasValue)
+                                {
+                                    <span><i class="fas fa-sync-alt me-1"></i>Updated: @complaint.LastUpdated.Value.ToString("dd MMM yyyy HH:mm")</span>
+                                }
+                                @if (complaint.DateResolved.HasValue)
+                                {
+                                    <span><i class="fas fa-check-circle me-1"></i>Resolved: @complaint.DateResolved.Value.ToString("dd MMM yyyy")</span>
+                                }
+                            </div>
+                        </div>
+                        <div class="student-card">
+                            <div class="student-avatar">@initials</div>
+                            <div class="student-details">
+                                <div class="student-name">@complaint.StudentName</div>
+                                <div class="student-number"><i class="fas fa-id-card me-1"></i>@complaint.StudentNumber</div>
+                                @if (isAdmin && !string.IsNullOrWhiteSpace(complaint.ResidenceName))
+                                {
+                                    <div class="student-number" style="margin-top: 2px;"><i class="fas fa-building me-1"></i>@complaint.ResidenceName</div>
+                                }
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Card Body Section -->
+                    <div class="card-body">
+                        <!-- Info Panel -->
+                        <div class="info-panel">
+                            <div class="info-grid">
+                                <div class="info-box">
+                                    <div class="info-label">Category</div>
+                                    <div class="info-value">@complaint.Category</div>
+                                </div>
+                                <div class="info-box">
+                                    <div class="info-label">Residence</div>
+                                    <div class="info-value">@(complaint.ResidenceName ?? "Not Assigned")</div>
+                                </div>
+                                <div class="info-box">
+                                    <div class="info-label">Student Number</div>
+                                    <div class="info-value">@(complaint.StudentNumber ?? "N/A")</div>
+                                </div>
+                                <div class="info-box">
+                                    <div class="info-label">Submitted Date</div>
+                                    <div class="info-value">@complaint.DateSubmitted.ToString("dd MMM yyyy")</div>
+                                </div>
+                            </div>
+
+                            @if (!string.IsNullOrWhiteSpace(complaint.ManagerFeedback))
+                            {
+                                <div class="feedback-box">
+                                    <div class="feedback-label"><i class="fas fa-comment-dots me-1"></i>Current Feedback</div>
+                                    <div class="feedback-text">@complaint.ManagerFeedback</div>
+                                </div>
+                            }
+                        </div>
+
+                        <!-- Form Panel -->
+                        <div class="form-panel">
+                            <div class="form-title"><i class="fas fa-edit me-2"></i>Update Complaint</div>
+                            @using (Html.BeginForm("UpdateComplaintStatus", "Staff", FormMethod.Post))
+                            {
+                                @Html.AntiForgeryToken()
+                                <input type="hidden" name="id" value="@complaint.ComplaintId" />
+
+                                <div class="form-group">
+                                    <label>Status</label>
+                                    <select name="status" class="form-control">
+                                        <option value="Pending" @(complaint.Status == "Pending" ? "selected" : "")>Pending</option>
+                                        <option value="In Progress" @(complaint.Status == "In Progress" ? "selected" : "")>In Progress</option>
+                                        <option value="Resolved" @(complaint.Status == "Resolved" ? "selected" : "")>Resolved</option>
+                                    </select>
+                                </div>
+
+                                <div class="form-group">
+                                    <label>Manager Feedback</label>
+                                    <textarea name="managerFeedback" class="form-control" placeholder="Write your response here...">@complaint.ManagerFeedback</textarea>
+                                    <div class="form-hint"><i class="fas fa-info-circle me-1"></i>This response will be visible to the student</div>
+                                </div>
+
+                                if (!complaint.WarningIssued)
+                                {
+                                    <div class="form-group border rounded p-2">
+                                        <label><input type="checkbox" name="issueWarning" value="true" /> Issue a conduct warning to the reported student</label>
+                                        <select name="warningSeverity" class="form-control mt-2">
+                                            <option value="">Select severity</option>
+                                            <option value="Minor">Minor</option>
+                                            <option value="Serious">Serious - blocks House Committee eligibility</option>
+                                            <option value="Critical">Critical - blocks House Committee eligibility</option>
+                                        </select>
+                                        <textarea name="warningReason" class="form-control mt-2" placeholder="Reason for the warning (required when issuing one)"></textarea>
+                                    </div>
+                                }
+
+                                <button type="submit" class="btn-save"><i class="fas fa-save me-2"></i>Save Changes</button>
+                            }
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    }
+</div>
+
+<script>
+    (function () {
+        var searchInput = document.getElementById('searchInput');
+        var statusFilter = document.getElementById('statusFilter');
+        var categoryFilter = document.getElementById('categoryFilter');
+        var resultCount = document.getElementById('resultCount');
+        var cards = document.querySelectorAll('.complaint-card');
+
+        function applyFilters() {
+            var searchText = (searchInput?.value || '').toLowerCase().trim();
+            var statusValue = statusFilter?.value || '';
+            var categoryValue = categoryFilter?.value || '';
+            var visible = 0;
+
+            cards.forEach(function (card) {
+                var matchesSearch = !searchText || card.dataset.search.includes(searchText);
+                var matchesStatus = !statusValue || card.dataset.status === statusValue;
+                var matchesCategory = !categoryValue || card.dataset.category === categoryValue;
+
+                if (matchesSearch && matchesStatus && matchesCategory) {
+                    card.style.display = '';
+                    visible++;
+                } else {
+                    card.style.display = 'none';
+                }
+            });
+
+            if (resultCount) {
+                var word = visible === 1 ? 'complaint' : 'complaints';
+                resultCount.textContent = visible + ' ' + word;
+            }
+        }
+
+        if (searchInput) searchInput.addEventListener('input', applyFilters);
+        if (statusFilter) statusFilter.addEventListener('change', applyFilters);
+        if (categoryFilter) categoryFilter.addEventListener('change', applyFilters);
+
+        // Auto-hide toasts after 5 seconds
+        var successToast = document.getElementById('toastSuccess');
+        var errorToast = document.getElementById('toastError');
+
+        if (successToast) {
+            setTimeout(function () {
+                successToast.style.opacity = '0';
+                setTimeout(function () { if (successToast) successToast.remove(); }, 300);
+            }, 5000);
+        }
+        if (errorToast) {
+            setTimeout(function () {
+                errorToast.style.opacity = '0';
+                setTimeout(function () { if (errorToast) errorToast.remove(); }, 300);
+            }, 5000);
+        }
+    })();
+</script>

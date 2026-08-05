@@ -1,0 +1,374 @@
+﻿@model DUTResManagementSystem.ViewModels.RoomChangeRequestViewModel
+@using DUTResManagementSystem.Models
+
+@{
+    ViewBag.Title = "Request Room Change";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+    var currentRoom = ViewBag.CurrentRoom as Room;
+}
+
+<div class="page-header">
+    <div>
+        <h1><i class="fas fa-exchange-alt me-2" style="color:var(--primary)"></i>Request Room Change</h1>
+        <div class="breadcrumb-text">Submit a request to change your room</div>
+    </div>
+    <div class="d-flex gap-2">
+        <a href="@Url.Action("MyRoomChangeRequests", "Student")" class="btn btn-secondary btn-sm">
+            <i class="fas fa-arrow-left me-2"></i>My Requests
+        </a>
+        <a href="@Url.Action("Dashboard", "Student")" class="btn btn-outline-secondary btn-sm">
+            <i class="fas fa-home me-2"></i>Dashboard
+        </a>
+    </div>
+</div>
+
+@if (TempData["ErrorMessage"] != null)
+{
+    <div class="alert alert-danger alert-dismissible fade show mb-3">
+        <i class="fas fa-exclamation-circle me-2"></i>@TempData["ErrorMessage"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+}
+
+<div class="row">
+    <div class="col-lg-8">
+        <div class="card mb-4">
+            <div class="card-header">
+                <i class="fas fa-edit me-2" style="color:var(--primary)"></i>Room Change Request Form
+            </div>
+            <div class="card-body">
+                <!-- Current room info -->
+                <div class="alert alert-info mb-4">
+                    <div class="d-flex align-items-center">
+                        <i class="fas fa-door-open fa-2x me-3"></i>
+                        <div>
+                            <strong>Your Current Room</strong><br />
+                            @if (currentRoom != null)
+                            {
+                                <span>
+                                    @ViewBag.ResidenceName — Room @currentRoom.RoomNumber (@currentRoom.RoomType)
+                                    @if (currentRoom.Floor.HasValue)
+                                    {<span>| Floor @currentRoom.Floor</span>}
+                                </span>
+                            }
+                            else
+                            {
+                                <span class="text-muted">Room info unavailable</span>
+                            }
+                        </div>
+                    </div>
+                </div>
+
+                @using (Html.BeginForm("RoomChangeRequest", "Student", FormMethod.Post, new { enctype = "multipart/form-data" }))
+                {
+                    @Html.AntiForgeryToken()
+
+                    <div class="mb-4">
+                        <label class="form-label">Reason for Request *</label>
+                        @Html.TextAreaFor(m => m.Reason, new
+                        {
+                            @class = "form-control",
+                            rows = 6,
+                            placeholder = "Please explain clearly why you need a room change. The more detail you provide, the faster your request will be reviewed.",
+                            required = "required"
+                        })
+                        @Html.ValidationMessageFor(m => m.Reason, "", new { @class = "text-danger small" })
+                        <div class="form-text"><span id="reasonCount">0</span> / 1000 characters</div>
+                    </div>
+
+                    <div class="mb-4">
+                        <label class="form-label">Supporting Document <span style="color:var(--text-muted);font-weight:400">(Optional)</span></label>
+                        <input type="file" name="DocumentFile" class="form-control" accept=".pdf,.doc,.docx,.jpg,.jpeg,.png" />
+                        <div class="form-text">Attach a supporting document such as a medical certificate or letter. Accepted: PDF, Word, JPG, PNG.</div>
+                    </div>
+
+                    <div class="alert alert-warning">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        <strong>Please note:</strong> You can only have one pending request at a time. The building manager will review your request and notify you by email.
+                    </div>
+
+                    <div class="d-flex gap-2 justify-content-end">
+                        <a href="@Url.Action("MyRoomChangeRequests", "Student")" class="btn btn-secondary">Cancel</a>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-paper-plane me-2"></i>Submit Request
+                        </button>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+
+    <!-- Tips Card -->
+    <div class="col-lg-4">
+        <div class="card">
+            <div class="card-header"><i class="fas fa-lightbulb me-2" style="color:#f59e0b"></i>Tips for a Successful Request</div>
+            <div class="card-body">
+                <div class="d-flex align-items-start gap-3 mb-3 pb-3" style="border-bottom:1px solid var(--border-light)">
+                    <div style="width:32px;height:32px;border-radius:8px;background:rgba(34,197,94,0.15);color:#22c55e;display:flex;align-items:center;justify-content:center">
+                        <i class="fas fa-check-circle"></i>
+                    </div>
+                    <div>
+                        <div style="font-weight:600;color:var(--text-primary);font-size:0.88rem">Be Clear</div>
+                        <div style="font-size:0.78rem;color:var(--text-muted)">Explain your reason in detail</div>
+                    </div>
+                </div>
+                <div class="d-flex align-items-start gap-3 mb-3 pb-3" style="border-bottom:1px solid var(--border-light)">
+                    <div style="width:32px;height:32px;border-radius:8px;background:rgba(59,130,246,0.15);color:var(--primary);display:flex;align-items:center;justify-content:center">
+                        <i class="fas fa-file"></i>
+                    </div>
+                    <div>
+                        <div style="font-weight:600;color:var(--text-primary);font-size:0.88rem">Add Documents</div>
+                        <div style="font-size:0.78rem;color:var(--text-muted)">Supporting docs help your case</div>
+                    </div>
+                </div>
+                <div class="d-flex align-items-start gap-3">
+                    <div style="width:32px;height:32px;border-radius:8px;background:rgba(34,197,94,0.15);color:#22c55e;display:flex;align-items:center;justify-content:center">
+                        <i class="fas fa-clock"></i>
+                    </div>
+                    <div>
+                        <div style="font-weight:600;color:var(--text-primary);font-size:0.88rem">Be Patient</div>
+                        <div style="font-size:0.78rem;color:var(--text-muted)">Requests are reviewed by staff</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    /* Card Styles */
+    .card {
+        background: var(--bg-card) !important;
+        border: 1px solid var(--border-color) !important;
+        border-radius: 12px !important;
+    }
+
+    .card-header {
+        background: var(--card-header-bg) !important;
+        border-bottom: 1px solid var(--border-light) !important;
+        border-radius: 12px 12px 0 0 !important;
+        padding: 1rem 1.25rem;
+        font-weight: 600;
+        color: var(--text-primary);
+    }
+
+    .card-body {
+        background: var(--bg-card) !important;
+    }
+
+    /* Page Header */
+    .page-header {
+        margin-bottom: 1.5rem;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 1rem;
+    }
+
+        .page-header h1 {
+            font-family: 'Roboto', sans-serif;
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--text-primary);
+            margin: 0;
+        }
+
+    .breadcrumb-text {
+        font-size: 0.85rem;
+        color: var(--text-muted);
+        margin-top: 0.25rem;
+    }
+
+    /* Form Elements */
+    .form-control {
+        background: var(--bg-input) !important;
+        border: 1px solid var(--border-color) !important;
+        color: var(--text-primary) !important;
+        border-radius: 8px;
+        transition: all 0.2s ease;
+    }
+
+        .form-control:focus {
+            border-color: var(--primary) !important;
+            box-shadow: 0 0 0 3px rgba(59,130,246,0.15) !important;
+            background: var(--bg-input) !important;
+            color: var(--text-primary) !important;
+        }
+
+        .form-control::placeholder {
+            color: var(--input-placeholder) !important;
+        }
+
+    .form-label {
+        color: var(--text-primary);
+        font-size: 0.85rem;
+        font-weight: 600;
+        margin-bottom: 0.5rem;
+    }
+
+    .form-text {
+        color: var(--text-muted-light) !important;
+        font-size: 0.75rem;
+        margin-top: 0.25rem;
+    }
+
+    /* Buttons */
+    .btn-primary {
+        background: var(--primary) !important;
+        border-color: var(--primary) !important;
+        padding: 0.6rem 1.25rem;
+        font-weight: 600;
+        border-radius: 8px;
+        transition: all 0.2s ease;
+    }
+
+        .btn-primary:hover {
+            background: var(--primary-dark) !important;
+            border-color: var(--primary-dark) !important;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(59,130,246,0.3);
+        }
+
+    .btn-secondary {
+        background: var(--bg-elevated) !important;
+        border-color: var(--border-color) !important;
+        color: var(--text-primary) !important;
+        padding: 0.6rem 1.25rem;
+        font-weight: 600;
+        border-radius: 8px;
+        transition: all 0.2s ease;
+    }
+
+        .btn-secondary:hover {
+            background: var(--hover-bg) !important;
+            color: var(--text-primary) !important;
+            transform: translateY(-1px);
+        }
+
+    .btn-outline-secondary {
+        background: transparent;
+        border: 1px solid var(--border-color);
+        color: var(--text-secondary);
+        padding: 0.6rem 1.25rem;
+        font-weight: 600;
+        border-radius: 8px;
+        transition: all 0.2s ease;
+    }
+
+        .btn-outline-secondary:hover {
+            background: var(--hover-bg);
+            color: var(--text-primary);
+            transform: translateY(-1px);
+        }
+
+    /* Alerts */
+    .alert-info {
+        background: rgba(59,130,246,0.1) !important;
+        border: 1px solid rgba(59,130,246,0.2) !important;
+        color: var(--text-primary) !important;
+        border-radius: 12px;
+    }
+
+    [data-theme="light"] .alert-info {
+        background: #d1ecf1 !important;
+        color: #0c5460 !important;
+        border-color: #bee5eb !important;
+    }
+
+    .alert-warning {
+        background: rgba(245,158,11,0.1) !important;
+        border: 1px solid rgba(245,158,11,0.2) !important;
+        color: var(--text-primary) !important;
+        border-radius: 12px;
+    }
+
+    [data-theme="light"] .alert-warning {
+        background: #fff3cd !important;
+        color: #856404 !important;
+        border-color: #ffeeba !important;
+    }
+
+    .alert-danger {
+        background: rgba(239,68,68,0.1) !important;
+        border: 1px solid rgba(239,68,68,0.2) !important;
+        color: #ef4444 !important;
+        border-radius: 12px;
+    }
+
+    [data-theme="light"] .alert-danger {
+        background: #f8d7da !important;
+        color: #721c24 !important;
+        border-color: #f5c6cb !important;
+    }
+
+    /* Validation Messages */
+    .text-danger {
+        color: #ef4444 !important;
+        font-size: 0.75rem;
+        margin-top: 0.25rem;
+        display: block;
+    }
+
+    .field-validation-error {
+        color: #ef4444 !important;
+        font-size: 0.75rem;
+    }
+
+    .text-muted {
+        color: var(--text-muted) !important;
+    }
+
+    /* Light mode overrides */
+    [data-theme="light"] .card-header {
+        color: #1a1a2e;
+    }
+
+    [data-theme="light"] .form-label {
+        color: #1a1a2e;
+    }
+
+    [data-theme="light"] .text-danger {
+        color: #dc3545 !important;
+    }
+</style>
+
+@section Scripts {
+    <script>
+        var reasonArea = document.querySelector('textarea[name="Reason"]');
+        var reasonCount = document.getElementById('reasonCount');
+        if (reasonArea && reasonCount) {
+            // Set initial count
+            reasonCount.textContent = reasonArea.value.length;
+            if (reasonArea.value.length > 900) {
+                reasonCount.style.color = '#ef4444';
+            } else if (reasonArea.value.length > 800) {
+                reasonCount.style.color = '#f59e0b';
+            } else {
+                reasonCount.style.color = 'var(--text-muted)';
+            }
+
+            reasonArea.addEventListener('input', function () {
+                reasonCount.textContent = this.value.length;
+                if (this.value.length > 900) {
+                    reasonCount.style.color = '#ef4444';
+                } else if (this.value.length > 800) {
+                    reasonCount.style.color = '#f59e0b';
+                } else {
+                    reasonCount.style.color = 'var(--text-muted)';
+                }
+            });
+        }
+
+        // Form validation
+        document.querySelector('form')?.addEventListener('submit', function (e) {
+            var reason = document.querySelector('textarea[name="Reason"]');
+            if (reason && reason.value.trim().length < 20) {
+                alert('Please provide a detailed reason for your room change request (at least 20 characters).');
+                e.preventDefault();
+                return false;
+            }
+            return true;
+        });
+    </script>
+}

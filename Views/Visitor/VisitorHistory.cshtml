@@ -1,0 +1,307 @@
+@model List<DUTResManagementSystem.ViewModels.VisitorRecordViewModel>
+
+@{
+    ViewBag.Title = "Visitor History";
+}
+
+<div class="container-fluid py-4">
+    <div class="page-header">
+        <div>
+            <h1><i class="fas fa-history me-2" style="color: var(--primary);"></i>Visitor History</h1>
+            <div class="breadcrumb-text">Search, filter, and export the full visitor movement log for this residence</div>
+        </div>
+        <div class="d-flex gap-2">
+            <a href="@Url.Action("ExportHistory", "Visitor", new { search = ViewBag.Search, status = ViewBag.Status, dateFrom = ViewBag.DateFrom, dateTo = ViewBag.DateTo })" class="btn btn-success">
+                <i class="fas fa-download me-2"></i>Export CSV
+            </a>
+            <a href="@Url.Action("Dashboard", "Visitor")" class="btn btn-secondary">
+                <i class="fas fa-arrow-left me-2"></i>Back to Dashboard
+            </a>
+        </div>
+    </div>
+
+    <!-- Stats Summary -->
+    <div class="row g-3 mb-4">
+        <div class="col-md-3">
+            <div class="stat-card">
+                <div class="stat-icon blue">
+                    <i class="fas fa-users"></i>
+                </div>
+                <div>
+                    <div class="stat-num">@Model.Count</div>
+                    <div class="stat-label">Total Visits</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="stat-card">
+                <div class="stat-icon green">
+                    <i class="fas fa-check-circle"></i>
+                </div>
+                <div>
+                    <div class="stat-num">@Model.Count(v => v.CurrentStatus == "Exited")</div>
+                    <div class="stat-label">Completed Visits</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="stat-card">
+                <div class="stat-icon yellow">
+                    <i class="fas fa-clock"></i>
+                </div>
+                <div>
+                    <div class="stat-num">@Model.Count(v => v.CurrentStatus == "Inside" || v.CurrentStatus == "Pending Entry")</div>
+                    <div class="stat-label">Active Visits</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="stat-card">
+                <div class="stat-icon red">
+                    <i class="fas fa-bell"></i>
+                </div>
+                <div>
+                    <div class="stat-num">@Model.Count(v => v.CurrentStatus == "Curfew Reached")</div>
+                    <div class="stat-label">Curfew Violations</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filter Card -->
+    <div class="card mb-4">
+        <div class="card-header">
+            <i class="fas fa-filter me-2" style="color: var(--primary);"></i>
+            Filter Records
+        </div>
+        <div class="card-body">
+            @using (Html.BeginForm("VisitorHistory", "Visitor", FormMethod.Get, new { id = "filterForm" }))
+            {
+                <div class="row g-3 align-items-end">
+                    <div class="col-md-3">
+                        <label class="form-label">
+                            <i class="fas fa-search me-1"></i>Search
+                        </label>
+                        <input type="text" name="search" value="@ViewBag.Search" class="form-control" placeholder="Visitor, student, room, code..." />
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label">
+                            <i class="fas fa-tag me-1"></i>Status
+                        </label>
+                        <select name="status" class="form-select">
+                            <option value="">All Statuses</option>
+                            <option value="Pending Entry" @(ViewBag.Status == "Pending Entry" ? "selected" : "")>Pending Entry</option>
+                            <option value="Inside" @(ViewBag.Status == "Inside" ? "selected" : "")>Inside</option>
+                            <option value="Curfew Reached" @(ViewBag.Status == "Curfew Reached" ? "selected" : "")>Curfew Reached</option>
+                            <option value="Exited" @(ViewBag.Status == "Exited" ? "selected" : "")>Exited</option>
+                        </select>
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label">
+                            <i class="fas fa-calendar-alt me-1"></i>From Date
+                        </label>
+                        <input type="date" name="dateFrom" value="@ViewBag.DateFrom" class="form-control" />
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label">
+                            <i class="fas fa-calendar-alt me-1"></i>To Date
+                        </label>
+                        <input type="date" name="dateTo" value="@ViewBag.DateTo" class="form-control" />
+                    </div>
+                    <div class="col-md-3">
+                        <div class="d-flex gap-2">
+                            <button type="submit" class="btn btn-primary flex-grow-1">
+                                <i class="fas fa-search me-2"></i>Apply Filters
+                            </button>
+                            <a href="@Url.Action("VisitorHistory", "Visitor")" class="btn btn-secondary">
+                                <i class="fas fa-sync-alt me-2"></i>Reset
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    </div>
+
+    <!-- Results Table -->
+    <div class="card">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <span>
+                <i class="fas fa-list me-2" style="color: var(--primary);"></i>
+                Visitor Records
+            </span>
+            <span class="badge bg-primary">@Model.Count Records</span>
+        </div>
+        <div class="card-body p-0">
+            @if (Model.Any())
+            {
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0" id="visitorHistoryTable">
+                        <thead>
+                            <tr>
+                                <th>Visitor</th>
+                                <th>Student</th>
+                                <th>Room</th>
+                                <th>Card</th>
+                                <th>Timeline</th>
+                                <th>Status</th>
+                                <th class="text-center">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var visitor in Model)
+                            {
+                                <tr>
+                                    <td>
+                                        <div class="fw-semibold" style="color: var(--text-primary);">@visitor.FullName</div>
+                                        <div class="small text-muted">ID: @visitor.IDNumber</div>
+                                    </td>
+                                    <td>
+                                        <span style="color: var(--text-secondary);">@visitor.StudentDisplayName</span>
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-secondary">@visitor.RoomNumber</span>
+                                    </td>
+                                    <td>
+                                        <div class="small">@visitor.DocumentType</div>
+                                        <span class="text-muted small">@visitor.IDNumber</span>
+                                    </td>
+                                    <td class="small">
+                                        <div><i class="fas fa-ticket-alt me-1 text-muted"></i> Pass: @visitor.PassCreatedAt.ToString("dd MMM yyyy HH:mm")</div>
+                                        <div><i class="fas fa-sign-in-alt me-1 text-muted"></i> Entry: @(visitor.EntryTime.HasValue ? visitor.EntryTime.Value.ToString("dd MMM yyyy HH:mm") : "—")</div>
+                                        <div><i class="fas fa-sign-out-alt me-1 text-muted"></i> Exit: @(visitor.ExitTime.HasValue ? visitor.ExitTime.Value.ToString("dd MMM yyyy HH:mm") : "—")</div>
+                                    </td>
+                                    <td>
+                                        @{
+                                            var statusClass = visitor.CurrentStatus == "Exited" ? "bg-success" :
+                                                             visitor.CurrentStatus == "Inside" ? "bg-primary" :
+                                                             visitor.CurrentStatus == "Curfew Reached" ? "bg-danger" : "bg-warning";
+                                            var statusIcon = visitor.CurrentStatus == "Exited" ? "fa-check-circle" :
+                                                             visitor.CurrentStatus == "Inside" ? "fa-door-open" :
+                                                             visitor.CurrentStatus == "Curfew Reached" ? "fa-bell" : "fa-clock";
+                                        }
+                                        <span class="badge @statusClass">
+                                            <i class="fas @statusIcon me-1"></i>@visitor.CurrentStatus
+                                        </span>
+                                    </td>
+                                    <td class="text-center">
+                                        <a href="@Url.Action("PrintablePass", "Visitor", new { id = visitor.VisitorID })" target="_blank" class="btn btn-sm btn-outline-primary" title="Print Pass">
+                                            <i class="fas fa-print"></i>
+                                        </a>
+                                        @if (visitor.CurrentStatus == "Inside" || visitor.CurrentStatus == "Curfew Reached")
+                                        {
+                                            <a href="@Url.Action("ManualCheckOut", "Visitor", new { id = visitor.VisitorID })" class="btn btn-sm btn-outline-danger ms-1" title="Manual Checkout" onclick="return confirm('Check out @visitor.FullName?')">
+                                                <i class="fas fa-sign-out-alt"></i>
+                                            </a>
+                                        }
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+            else
+            {
+                <div class="text-center py-5 text-muted">
+                    <i class="fas fa-history fa-4x mb-3"></i>
+                    <h5>No Visitor Records Found</h5>
+                    <p class="mb-0">Try adjusting your search filters or clear them to see all records.</p>
+                    <a href="@Url.Action("VisitorHistory", "Visitor")" class="btn btn-primary mt-3">
+                        <i class="fas fa-sync-alt me-2"></i>Clear Filters
+                    </a>
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        $(document).ready(function() {
+            // Initialize DataTable
+            $('#visitorHistoryTable').DataTable({
+                pageLength: 15,
+                order: [[4, 'desc']], // Sort by timeline (Pass Created date) descending
+                language: {
+                    search: "<i class='fas fa-search'></i> Search:",
+                    searchPlaceholder: "Search records...",
+                    lengthMenu: "Show _MENU_ records",
+                    info: "Showing _START_ to _END_ of _TOTAL_ records",
+                    infoEmpty: "No records found",
+                    infoFiltered: "(filtered from _MAX_ total records)",
+                    emptyTable: "No visitor records available",
+                    paginate: {
+                        first: "First",
+                        last: "Last",
+                        next: "Next",
+                        previous: "Previous"
+                    }
+                },
+                columnDefs: [
+                    { orderable: false, targets: [2, 3, 6] } // Disable ordering on Room, Document, Actions
+                ],
+                autoWidth: false
+            });
+        });
+
+        // Preserve filter values on form submit
+        document.getElementById('filterForm')?.addEventListener('submit', function() {
+            // Trim search input
+            const searchInput = document.querySelector('input[name="search"]');
+            if (searchInput) {
+                searchInput.value = searchInput.value.trim();
+            }
+        });
+    </script>
+}
+
+<style>
+    /* Additional table styling for better readability */
+    .dataTables_wrapper .dataTables_filter input {
+        margin-left: 0.5rem;
+        padding: 0.375rem 0.75rem;
+        border-radius: 8px;
+    }
+
+    .dataTables_wrapper .dataTables_length select {
+        border-radius: 8px;
+        padding: 0.25rem 0.5rem;
+    }
+
+    .table td {
+        vertical-align: middle;
+    }
+
+    .btn-sm {
+        padding: 0.25rem 0.5rem;
+        font-size: 0.75rem;
+    }
+
+    code {
+        background: var(--bg-elevated);
+        padding: 0.2rem 0.4rem;
+        border-radius: 4px;
+        font-size: 0.7rem;
+        color: var(--text-primary);
+    }
+
+    /* Status badge icons alignment */
+    .badge i {
+        font-size: 0.7rem;
+    }
+
+    /* Responsive adjustments */
+    @@media (max-width: 768px) {
+        .dataTables_wrapper .dataTables_length,
+        .dataTables_wrapper .dataTables_filter {
+            float: none;
+            text-align: left;
+            margin-bottom: 1rem;
+        }
+
+            .dataTables_wrapper .dataTables_filter input {
+                width: 100%;
+            }
+    }
+</style>

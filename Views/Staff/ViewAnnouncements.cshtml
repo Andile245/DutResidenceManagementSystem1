@@ -1,0 +1,154 @@
+﻿@model IEnumerable<DUTResManagementSystem.Models.Announcement>
+
+@{
+    ViewBag.Title = "Announcements";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<div class="page-header">
+    <div>
+        <h1><i class="fas fa-envelope-open me-2" style="color:var(--primary)"></i>Announcements</h1>
+        <div class="breadcrumb-text">All active announcements</div>
+    </div>
+    <a href="@Url.Action("SendAnnouncement", "Staff")" class="btn btn-primary btn-sm">
+        <i class="fas fa-plus me-2"></i>Send New
+    </a>
+</div>
+
+@if (Model != null && Model.Any())
+{
+    foreach (var a in Model)
+    {
+        string priorityClass = a.Priority == "Emergency" ? "danger" : a.Priority == "Important" ? "warning" : "info";
+        string borderHex = a.Priority == "Emergency" ? "rgba(239,68,68,0.3)" : a.Priority == "Important" ? "rgba(245,158,11,0.3)" : "rgba(59,130,246,0.3)";
+        string iconColor = a.Priority == "Emergency" ? "#ef4444" : a.Priority == "Important" ? "#f59e0b" : "var(--primary)";
+        string priorityBg = a.Priority == "Emergency" ? "rgba(239,68,68,0.15)" : a.Priority == "Important" ? "rgba(245,158,11,0.15)" : "rgba(59,130,246,0.15)";
+        string priorityColor = a.Priority == "Emergency" ? "#ef4444" : a.Priority == "Important" ? "#f59e0b" : "var(--primary)";
+
+        <div class="card mb-4" style="border-color:@borderHex!important">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <div class="d-flex align-items-center gap-3">
+                    <div style="width:36px;height:36px;border-radius:10px;background:var(--bg-elevated);display:flex;align-items:center;justify-content:center;color:@iconColor">
+                        <i class="fas fa-bullhorn"></i>
+                    </div>
+                    <div>
+                        <div style="font-weight:700;color:var(--text-primary)">@a.Title</div>
+                        <div style="font-size:0.75rem;color:var(--text-muted)">@a.DatePosted.ToString("dd MMM yyyy hh:mm tt")</div>
+                    </div>
+                </div>
+                <div class="d-flex gap-2">
+                    <span class="badge" style="background:@priorityBg;color:@priorityColor;border:1px solid @priorityColor">@a.Priority</span>
+                    <span class="badge" style="background:var(--bg-elevated);color:var(--text-secondary);border:1px solid var(--border)">@a.TargetAudience</span>
+                </div>
+            </div>
+            <div class="card-body">
+                <p style="color:var(--text-secondary);line-height:1.7;margin-bottom:1rem;white-space:pre-wrap">@a.Content</p>
+                <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
+                    <small style="color:var(--text-muted)"><i class="fas fa-user me-1"></i>Posted by Staff</small>
+                    @if (a.ExpiryDate.HasValue)
+                    {
+                        <small style="color:var(--text-muted)"><i class="fas fa-clock me-1"></i>Expires: @a.ExpiryDate.Value.ToString("dd MMM yyyy")</small>
+                    }
+                </div>
+            </div>
+        </div>
+    }
+}
+else
+{
+    <div class="card">
+        <div class="card-body text-center py-5" style="color:var(--text-muted)">
+            <i class="fas fa-bullhorn fa-4x mb-3"></i>
+            <h5>No Announcements</h5>
+            <p>There are no current announcements.</p>
+            <a href="@Url.Action("SendAnnouncement", "Staff")" class="btn btn-primary mt-2">
+                <i class="fas fa-plus me-2"></i>Create First Announcement
+            </a>
+        </div>
+    </div>
+}
+
+<style>
+    /* Card Styles */
+    .card {
+        background: var(--bg-card) !important;
+        border: 1px solid var(--border-color) !important;
+        border-radius: 12px !important;
+    }
+
+    .card-header {
+        background: var(--card-header-bg) !important;
+        border-bottom: 1px solid var(--border-light) !important;
+        border-radius: 12px 12px 0 0 !important;
+        padding: 1rem 1.25rem;
+        font-weight: 600;
+        color: var(--text-primary);
+    }
+
+    .card-body {
+        background: var(--bg-card) !important;
+    }
+
+    /* Page Header */
+    .page-header {
+        margin-bottom: 1.5rem;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 1rem;
+    }
+
+        .page-header h1 {
+            font-family: 'Roboto', sans-serif;
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--text-primary);
+            margin: 0;
+        }
+
+    .breadcrumb-text {
+        font-size: 0.85rem;
+        color: var(--text-muted);
+        margin-top: 0.25rem;
+    }
+
+    /* Buttons */
+    .btn-primary {
+        background: var(--primary) !important;
+        border-color: var(--primary) !important;
+        padding: 0.5rem 1rem;
+        font-weight: 600;
+        border-radius: 8px;
+        transition: all 0.2s ease;
+    }
+
+        .btn-primary:hover {
+            background: var(--primary-dark) !important;
+            border-color: var(--primary-dark) !important;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(59,130,246,0.3);
+        }
+
+    /* Badges */
+    .badge {
+        font-weight: 500;
+        padding: 0.35rem 0.75rem;
+        border-radius: 20px;
+    }
+
+    /* Light mode overrides */
+    [data-theme="light"] .card-header {
+        color: #1a1a2e;
+    }
+
+        [data-theme="light"] .card-header div div {
+            color: #1a1a2e !important;
+        }
+
+    [data-theme="light"] .badge.bg-secondary {
+        background: #e9ecef !important;
+        color: #495057 !important;
+        border-color: #dee2e6 !important;
+    }
+</style>

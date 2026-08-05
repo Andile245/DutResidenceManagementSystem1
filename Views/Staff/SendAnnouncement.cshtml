@@ -1,0 +1,362 @@
+﻿@model DUTResManagementSystem.Models.Announcement
+
+@{
+    ViewBag.Title = "Send Announcement";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+    var userRole = Session["UserType"] as string;
+    var isAdmin = userRole == "Admin";
+}
+
+<div class="page-header">
+    <div>
+        <h1><i class="fas fa-bullhorn me-2" style="color:var(--primary)"></i>Send Announcement</h1>
+        <div class="breadcrumb-text">@(isAdmin ? "Create an announcement for everyone" : "Create an announcement for your residence students")</div>
+    </div>
+</div>
+
+@if (TempData["SuccessMessage"] != null)
+{
+    <div class="alert alert-success alert-dismissible fade show mb-4">
+        <i class="fas fa-check-circle me-2"></i>@TempData["SuccessMessage"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+}
+
+<div class="row">
+    <div class="col-lg-8">
+        <div class="card">
+            <div class="card-header">
+                <i class="fas fa-edit me-2" style="color:var(--primary)"></i>@(isAdmin ? "Create Announcement" : "Create Announcement for Students")
+            </div>
+            <div class="card-body">
+                @using (Html.BeginForm("SendAnnouncement", "Staff", FormMethod.Post, new { id = "announcementForm" }))
+                {
+                    @Html.AntiForgeryToken()
+
+                    <div class="mb-4">
+                        <label class="form-label">Title *</label>
+                        @Html.TextBoxFor(m => m.Title, new { @class = "form-control", placeholder = "Enter announcement title", required = "required" })
+                        @Html.ValidationMessageFor(m => m.Title, "", new { @class = "text-danger small" })
+                    </div>
+
+                    <div class="mb-4">
+                        <label class="form-label">Message *</label>
+                        @Html.TextAreaFor(m => m.Content, new { @class = "form-control", rows = "6", placeholder = "Write your announcement message here...", required = "required" })
+                        @Html.ValidationMessageFor(m => m.Content, "", new { @class = "text-danger small" })
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-4">
+                            <label class="form-label">Priority</label>
+                            @Html.DropDownListFor(m => m.Priority,
+                                new SelectList(new[] { "Normal", "Important", "Emergency" }),
+                                "Select Priority", new { @class = "form-select" })
+                        </div>
+                        <div class="col-md-6 mb-4">
+                            <label class="form-label">Expiry Date <span style="color:var(--text-muted);font-weight:400">(Optional)</span></label>
+                            @Html.TextBoxFor(m => m.ExpiryDate, new { @class = "form-control", type = "date" })
+                            <div class="form-text">Leave blank if announcement does not expire.</div>
+                        </div>
+                    </div>
+
+                    if (isAdmin)
+                    {
+                        <div class="mb-4">
+                            <label class="form-label">Target Audience</label>
+                            @Html.DropDownListFor(m => m.TargetAudience,
+                                new SelectList(new[] { "Everyone", "Students", "Staff" }),
+                                "Select Audience", new { @class = "form-select" })
+                        </div>
+                    }
+                    else
+                    {
+                        @Html.Hidden("TargetAudience", "Students")
+                    }
+
+                    <div class="d-flex gap-2 justify-content-end">
+                        <button type="reset" class="btn btn-secondary">
+                            <i class="fas fa-undo me-1"></i>Clear
+                        </button>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-paper-plane me-2"></i>@(isAdmin ? "Send Announcement" : "Send to Students")
+                        </button>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+
+    <!-- Tips Card -->
+    <div class="col-lg-4">
+        <div class="card">
+            <div class="card-header"><i class="fas fa-lightbulb me-2" style="color:#f59e0b"></i>Announcement Tips</div>
+            <div class="card-body">
+                <div class="d-flex align-items-start gap-3 mb-3 pb-3" style="border-bottom:1px solid var(--border-light)">
+                    <div style="width:32px;height:32px;border-radius:8px;background:rgba(239,68,68,0.15);color:#ef4444;display:flex;align-items:center;justify-content:center;flex-shrink:0">
+                        <i class="fas fa-exclamation"></i>
+                    </div>
+                    <div>
+                        <div style="font-weight:600;color:var(--text-primary);font-size:0.88rem">Emergency</div>
+                        <div style="font-size:0.78rem;color:var(--text-muted)">For urgent safety or critical issues</div>
+                    </div>
+                </div>
+                <div class="d-flex align-items-start gap-3 mb-3 pb-3" style="border-bottom:1px solid var(--border-light)">
+                    <div style="width:32px;height:32px;border-radius:8px;background:rgba(245,158,11,0.15);color:#f59e0b;display:flex;align-items:center;justify-content:center;flex-shrink:0">
+                        <i class="fas fa-star"></i>
+                    </div>
+                    <div>
+                        <div style="font-weight:600;color:var(--text-primary);font-size:0.88rem">Important</div>
+                        <div style="font-size:0.78rem;color:var(--text-muted)">For policy changes or key dates</div>
+                    </div>
+                </div>
+                <div class="d-flex align-items-start gap-3">
+                    <div style="width:32px;height:32px;border-radius:8px;background:rgba(59,130,246,0.15);color:var(--primary);display:flex;align-items:center;justify-content:center;flex-shrink:0">
+                        <i class="fas fa-info"></i>
+                    </div>
+                    <div>
+                        <div style="font-weight:600;color:var(--text-primary);font-size:0.88rem">Normal</div>
+                        <div style="font-size:0.78rem;color:var(--text-muted)">For general updates and news</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    /* Card Styles */
+    .card {
+        background: var(--bg-card) !important;
+        border: 1px solid var(--border-color) !important;
+        border-radius: 12px !important;
+    }
+
+    .card-header {
+        background: var(--card-header-bg) !important;
+        border-bottom: 1px solid var(--border-light) !important;
+        border-radius: 12px 12px 0 0 !important;
+        padding: 1rem 1.25rem;
+        font-weight: 600;
+        color: var(--text-primary);
+    }
+
+    .card-body {
+        background: var(--bg-card) !important;
+    }
+
+    /* Page Header */
+    .page-header {
+        margin-bottom: 1.5rem;
+    }
+
+        .page-header h1 {
+            font-family: 'Roboto', sans-serif;
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--text-primary);
+            margin: 0;
+        }
+
+    .breadcrumb-text {
+        font-size: 0.85rem;
+        color: var(--text-muted);
+        margin-top: 0.25rem;
+    }
+
+    /* Form Elements */
+    .form-control, .form-select {
+        background: var(--bg-input) !important;
+        border: 1px solid var(--border-color) !important;
+        color: var(--text-primary) !important;
+        border-radius: 8px;
+        transition: all 0.2s ease;
+    }
+
+        .form-control:focus, .form-select:focus {
+            border-color: var(--primary) !important;
+            box-shadow: 0 0 0 3px rgba(59,130,246,0.15) !important;
+            background: var(--bg-input) !important;
+            color: var(--text-primary) !important;
+        }
+
+        .form-control::placeholder {
+            color: var(--input-placeholder) !important;
+        }
+
+    .form-label {
+        color: var(--text-primary);
+        font-size: 0.85rem;
+        font-weight: 600;
+        margin-bottom: 0.5rem;
+    }
+
+    .form-text {
+        color: var(--text-muted-light) !important;
+        font-size: 0.75rem;
+        margin-top: 0.25rem;
+    }
+
+    /* Buttons */
+    .btn-primary {
+        background: var(--primary) !important;
+        border-color: var(--primary) !important;
+        padding: 0.6rem 1.25rem;
+        font-weight: 600;
+        border-radius: 8px;
+        transition: all 0.2s ease;
+    }
+
+        .btn-primary:hover {
+            background: var(--primary-dark) !important;
+            border-color: var(--primary-dark) !important;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(59,130,246,0.3);
+        }
+
+    .btn-secondary {
+        background: var(--bg-elevated) !important;
+        border-color: var(--border-color) !important;
+        color: var(--text-primary) !important;
+        padding: 0.6rem 1.25rem;
+        font-weight: 600;
+        border-radius: 8px;
+        transition: all 0.2s ease;
+    }
+
+        .btn-secondary:hover {
+            background: var(--hover-bg) !important;
+            color: var(--text-primary) !important;
+            transform: translateY(-1px);
+        }
+
+    /* Alerts */
+    .alert-success {
+        background: rgba(34,197,94,0.1) !important;
+        border: 1px solid rgba(34,197,94,0.2) !important;
+        color: var(--text-primary) !important;
+        border-radius: 12px;
+    }
+
+    [data-theme="light"] .alert-success {
+        background: #d4edda !important;
+        color: #155724 !important;
+        border-color: #c3e6cb !important;
+    }
+
+    /* Validation Messages */
+    .text-danger {
+        color: #ef4444 !important;
+        font-size: 0.75rem;
+        margin-top: 0.25rem;
+        display: block;
+    }
+
+    .field-validation-error {
+        color: #ef4444 !important;
+        font-size: 0.75rem;
+    }
+
+    /* Light mode overrides */
+    [data-theme="light"] .card-header {
+        color: #1a1a2e;
+    }
+
+    [data-theme="light"] .form-label {
+        color: #1a1a2e;
+    }
+
+    [data-theme="light"] .text-danger {
+        color: #dc3545 !important;
+    }
+
+    [data-theme="light"] .form-text {
+        color: #6c757d !important;
+    }
+
+    /* Dark mode specific adjustments */
+    [data-theme="dark"] .btn-secondary {
+        background: #2D2D3A !important;
+        border-color: rgba(255,255,255,0.1) !important;
+    }
+
+        [data-theme="dark"] .btn-secondary:hover {
+            background: rgba(255,255,255,0.08) !important;
+        }
+
+    /* Priority colors for tips */
+    .priority-emergency {
+        color: #ef4444;
+    }
+
+    .priority-important {
+        color: #f59e0b;
+    }
+
+    .priority-normal {
+        color: var(--primary);
+    }
+</style>
+
+@section Scripts {
+    @Scripts.Render("~/bundles/jqueryval")
+
+    <script>
+        $(document).ready(function() {
+            // Add priority-based styling to the select dropdown
+            $('#Priority').on('change', function() {
+                var priority = $(this).val();
+                if (priority === 'Emergency') {
+                    $(this).css('border-color', '#ef4444');
+                } else if (priority === 'Important') {
+                    $(this).css('border-color', '#f59e0b');
+                } else {
+                    $(this).css('border-color', 'var(--border-color)');
+                }
+            }).trigger('change');
+
+            // Character counter for message field
+            var $messageField = $('#Content');
+            var $charCounter = $('<small class="form-text mt-1">0 characters</small>');
+            $messageField.after($charCounter);
+
+            function updateCharCount() {
+                var length = $messageField.val().length;
+                $charCounter.text(length + ' characters');
+                if (length > 500) {
+                    $charCounter.css('color', '#ef4444');
+                } else {
+                    $charCounter.css('color', 'var(--text-muted-light)');
+                }
+            }
+
+            $messageField.on('input', updateCharCount);
+            updateCharCount();
+
+            // Form validation before submit
+            $('form').on('submit', function(e) {
+                var title = $('#Title').val().trim();
+                var content = $('#Content').val().trim();
+
+                if (!title) {
+                    alert('Please enter an announcement title');
+                    e.preventDefault();
+                    return false;
+                }
+
+                if (!content) {
+                    alert('Please enter announcement content');
+                    e.preventDefault();
+                    return false;
+                }
+
+                if (content.length > 2000) {
+                    alert('Announcement content is too long (max 2000 characters)');
+                    e.preventDefault();
+                    return false;
+                }
+
+                return true;
+            });
+        });
+    </script>
+}

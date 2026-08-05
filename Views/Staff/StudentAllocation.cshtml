@@ -1,0 +1,804 @@
+﻿@model List<DUTResManagementSystem.Models.Student>
+
+@{
+    ViewBag.Title = "Student Allocation";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+@Html.AntiForgeryToken()
+
+<!-- Page Header -->
+<div class="page-header">
+    <div>
+        <h1><i class="fas fa-user-graduate me-2" style="color:var(--primary)"></i>Student Allocation</h1>
+        <div class="breadcrumb-text">Allocate students to residences based on Faculty & Gender</div>
+    </div>
+</div>
+
+<!-- Alerts -->
+@if (TempData["SuccessMessage"] != null)
+{
+    <div class="alert alert-success alert-dismissible fade show mb-3">
+        <i class="fas fa-check-circle me-2"></i>@TempData["SuccessMessage"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+}
+@if (TempData["ErrorMessage"] != null)
+{
+    <div class="alert alert-danger alert-dismissible fade show mb-3">
+        <i class="fas fa-exclamation-circle me-2"></i>@TempData["ErrorMessage"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+}
+
+<!-- Search & Filters -->
+<div class="card mb-3">
+    <div class="card-header">
+        <i class="fas fa-filter me-2" style="color:var(--primary)"></i>Search &amp; Filters
+    </div>
+    <div class="card-body">
+        @using (Html.BeginForm("StudentAllocation", "Staff", FormMethod.Get))
+        {
+            <div class="row g-3">
+                <div class="col-md-3">
+                    <label class="form-label">Search Student</label>
+                    <input type="text" name="searchString" class="form-control" value="@ViewBag.SearchString" placeholder="Name or student number..." />
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Faculty</label>
+                    <select class="form-select" name="faculty">
+                        <option value="">All Faculties</option>
+                        <option value="Accounting and Informatics" selected="@(ViewBag.Faculty == "Accounting and Informatics")">Accounting &amp; Informatics</option>
+                        <option value="Applied Sciences" selected="@(ViewBag.Faculty == "Applied Sciences")">Applied Sciences</option>
+                        <option value="Arts and Design" selected="@(ViewBag.Faculty == "Arts and Design")">Arts &amp; Design</option>
+                        <option value="Engineering and the Built Environment" selected="@(ViewBag.Faculty == "Engineering and the Built Environment")">Engineering</option>
+                        <option value="Health Sciences" selected="@(ViewBag.Faculty == "Health Sciences")">Health Sciences</option>
+                        <option value="Management Sciences" selected="@(ViewBag.Faculty == "Management Sciences")">Management Sciences</option>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label">Gender</label>
+                    <select class="form-select" name="gender">
+                        <option value="">All</option>
+                        <option value="Male" selected="@(ViewBag.Gender == "Male")">Male</option>
+                        <option value="Female" selected="@(ViewBag.Gender == "Female")">Female</option>
+                        <option value="Other" selected="@(ViewBag.Gender == "Other")">Other</option>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label">Status</label>
+                    <select class="form-select" name="status">
+                        <option value="">All Students</option>
+                        <option value="allocated" selected="@(ViewBag.Status == "allocated")">Allocated</option>
+                        <option value="not-allocated" selected="@(ViewBag.Status == "not-allocated")">Not Allocated</option>
+                    </select>
+                </div>
+                <div class="col-md-2 d-flex align-items-end gap-2">
+                    <button type="submit" class="btn btn-primary w-100"><i class="fas fa-search me-1"></i>Search</button>
+                    <a href="@Url.Action("StudentAllocation")" class="btn btn-secondary"><i class="fas fa-sync"></i></a>
+                </div>
+            </div>
+        }
+    </div>
+</div>
+
+<!-- Stat Cards -->
+<div class="row g-3 mb-3">
+    <div class="col-md-3">
+        <div class="stat-card">
+            <div class="stat-icon" style="background:rgba(59,130,246,0.15);color:var(--primary)">
+                <i class="fas fa-users"></i>
+            </div>
+            <div><div class="stat-num">@Model.Count</div><div class="stat-label">Total Students</div></div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="stat-card">
+            <div class="stat-icon" style="background:rgba(34,197,94,0.15);color:#22c55e">
+                <i class="fas fa-check-circle"></i>
+            </div>
+            <div><div class="stat-num">@Model.Count(s => s.ResidenceID != null)</div><div class="stat-label">Allocated</div></div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="stat-card">
+            <div class="stat-icon" style="background:rgba(245,158,11,0.15);color:#f59e0b">
+                <i class="fas fa-clock"></i>
+            </div>
+            <div><div class="stat-num">@Model.Count(s => s.ResidenceID == null)</div><div class="stat-label">Pending</div></div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="stat-card">
+            <div class="stat-icon" style="background:rgba(16,185,129,0.15);color:#10b981">
+                <i class="fas fa-building"></i>
+            </div>
+            <div><div class="stat-num">@ViewBag.AvailableSpaces</div><div class="stat-label">Available Spaces</div></div>
+        </div>
+    </div>
+</div>
+
+<!-- Residence Availability Summary -->
+<div class="card mb-3">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <span><i class="fas fa-building me-2" style="color:var(--primary)"></i>Residence Availability & Faculty Restrictions</span>
+        <span class="badge" style="background:rgba(34,197,94,0.15);color:#22c55e">Live Capacity</span>
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-sm mb-0" id="residenceSummaryTable">
+                <thead>
+                    <tr>
+                        <th>Residence</th>
+                        <th>Policy</th>
+                        <th>Faculty Restriction</th>
+                        <th>Capacity</th>
+                        <th>Occupied</th>
+                        <th>Available</th>
+                        <th width="150">Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var res in ViewBag.ResidenceBreakdown)
+                    {
+                        var pct = res.Capacity > 0 ? (int)((double)res.Occupied / res.Capacity * 100) : 0;
+                        var statusClass = res.Available == 0 ? "danger" : res.Available < 5 ? "warning" : "success";
+                        var statusColor = res.Available == 0 ? "#ef4444" : res.Available < 5 ? "#f59e0b" : "#22c55e";
+                        var isRestricted = !string.IsNullOrEmpty(res.Faculty);
+                        string genderBg = res.GenderPolicy == "Mixed" ? "rgba(59,130,246,0.15)" : res.GenderPolicy == "Male" ? "rgba(59,130,246,0.15)" : "rgba(236,72,153,0.15)";
+                        string genderColor = res.GenderPolicy == "Mixed" ? "var(--primary)" : res.GenderPolicy == "Male" ? "var(--primary)" : "#ec4899";
+                        <tr>
+                            <td style="font-weight:600;color:var(--text-primary)">@res.Name</td>
+                            <td>
+                                <span class="badge" style="background:@genderBg;color:@genderColor;border:1px solid @genderColor">
+                                    @res.GenderPolicy
+                                </span>
+                            </td>
+                            <td style="font-size:0.82rem;color:@(isRestricted ? "#f59e0b" : "#22c55e")">
+                                <i class="fas @(isRestricted ? "fa-lock" : "fa-unlock") me-1"></i>
+                                @(isRestricted ? res.Faculty : "All Faculties")
+                            </td>
+                            <td style="color:var(--text-secondary)">@res.Capacity</td>
+                            <td style="color:var(--text-secondary)">@res.Occupied</td>
+                            <td style="color:#22c55e;font-weight:600">@res.Available</td>
+                            <td>
+                                <div class="progress" style="height:4px;background:var(--progress-bg)">
+                                    <div class="progress-bar" style="width:@pct;background:@statusColor;border-radius:4px"></div>
+                                </div>
+                                <small style="color:var(--text-muted);font-size:0.7rem">@pct% full</small>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Bulk Allocation Bar -->
+<div class="card mb-3">
+    <div class="card-body d-flex align-items-center justify-content-between py-3">
+        <div style="color:var(--text-secondary);font-size:0.88rem">
+            <i class="fas fa-bolt me-2" style="color:var(--primary)"></i>
+            <strong>Bulk Allocate:</strong> Auto-matches students by Faculty & Gender
+        </div>
+        <button class="btn btn-primary btn-sm" onclick="allocateSelectedStudents()">
+            <i class="fas fa-play me-2"></i>Bulk Allocate (<span id="availableCount">@Model.Count(s => s.ResidenceID == null)</span> pending)
+        </button>
+    </div>
+</div>
+
+<!-- Students Table -->
+<div class="card">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <span><i class="fas fa-table me-2" style="color:var(--primary)"></i>Students</span>
+        <span class="badge" style="background:var(--primary-light);color:var(--primary)">@Model.Count</span>
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table mb-0" id="studentsTable">
+                <thead>
+                    <tr>
+                        <th width="40"><input type="checkbox" id="selectAll" onchange="toggleSelectAll(this.checked)" style="accent-color:var(--primary)"></th>
+                        <th>Student #</th>
+                        <th>Name</th>
+                        <th>Gender</th>
+                        <th>Faculty</th>
+                        <th>Year</th>
+                        <th>Residence</th>
+                        <th>Status</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var student in Model)
+                    {
+                        string genderBg = student.Gender == "Male" ? "rgba(59,130,246,0.15)" : student.Gender == "Female" ? "rgba(236,72,153,0.15)" : "rgba(107,114,128,0.15)";
+                        string genderColor = student.Gender == "Male" ? "var(--primary)" : student.Gender == "Female" ? "#ec4899" : "var(--text-muted)";
+                        <tr>
+                            <td>
+                                @if (student.ResidenceID == null)
+                                {
+                                    <input type="checkbox" class="student-checkbox" value="@student.StudentID"
+                                           data-gender="@student.Gender" data-faculty="@student.Faculty"
+                                           style="accent-color:var(--primary)">
+                                }
+                                else
+                                {
+                                    <input type="checkbox" disabled>
+                                }
+                            </td>
+                            <td style="color:var(--text-secondary);font-size:0.85rem">@student.StudentNumber</td>
+                            <td style="font-weight:600;color:var(--text-primary)">@student.FirstName @student.LastName</td>
+                            <td>
+                                <span class="badge" style="background:@genderBg;color:@genderColor;border:1px solid @genderColor">
+                                    @student.Gender
+                                </span>
+                            </td>
+                            <td style="font-size:0.82rem">
+                                <span class="badge" style="background:var(--bg-elevated);color:var(--text-secondary);border:1px solid var(--border)">@student.Faculty</span>
+                            </td>
+                            <td style="color:var(--text-muted)">Year @student.YearOfStudy</td>
+                            <td style="font-size:0.85rem">
+                                @if (student.ResidenceID != null)
+                                {
+                                    <span style="color:#22c55e">@(student.Residence?.Name ?? "Allocated")</span>
+                                }
+                                else
+                                {
+                                    <span style="color:var(--text-muted)">—</span>
+                                }
+                            </td>
+                            <td>
+                                @if (student.ResidenceID != null)
+                                {
+                                    <span class="badge" style="background:rgba(34,197,94,0.15);color:#22c55e;border:1px solid rgba(34,197,94,0.3)">Allocated</span>
+                                }
+                                else
+                                {
+                                    <span class="badge" style="background:rgba(245,158,11,0.15);color:#f59e0b;border:1px solid rgba(245,158,11,0.3)">Pending</span>
+                                }
+                            </td>
+                            <td>
+                                @if (student.ResidenceID == null)
+                                {
+                                    <button class="btn btn-sm btn-outline-primary" onclick="openAllocationModal('@student.StudentID', '@student.Gender', '@student.Faculty', '@student.FirstName @student.LastName')">
+                                        <i class="fas fa-home me-1"></i>Allocate
+                                    </button>
+                                }
+                                else
+                                {
+                                    using (Html.BeginForm("DeallocateStudent", "Staff", FormMethod.Post, new { @class = "d-inline" }))
+                                    {
+                                        @Html.AntiForgeryToken()
+                                        <input type="hidden" name="studentId" value="@student.StudentID" />
+                                        <button type="submit" class="btn btn-sm btn-outline-danger"
+                                                onclick="return confirm('Remove @student.FirstName @student.LastName from their residence?')">
+                                            <i class="fas fa-times me-1"></i>Remove
+                                        </button>
+                                    }
+                                }
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Bulk Allocation Modal -->
+<div class="modal fade" id="bulkAllocationModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title"><i class="fas fa-bolt me-2" style="color:var(--primary)"></i>Bulk Allocate <span id="bulkStudentCount">0</span> Student(s)</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="alert alert-info mb-3">
+                    <i class="fas fa-info-circle me-2"></i>
+                    <strong>Auto-Assignment:</strong> Students will only be allocated to residences that accept their specific faculty and gender.
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Select Residence (Optional)</label>
+                    <select id="bulkResidenceId" class="form-select">
+                        <option value="">-- Auto-assign by Faculty & Gender --</option>
+                        @if (ViewBag.Residences != null)
+                        {
+                            foreach (SelectListItem item in ViewBag.Residences)
+                            {
+                                <option value="@item.Value">@item.Text</option>
+                            }
+                        }
+                    </select>
+                    <div class="form-text" style="color:#f59e0b">
+                        <i class="fas fa-exclamation-triangle me-1"></i>
+                        Manual selection will be validated for faculty compatibility.
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" id="confirmBulkBtn" class="btn btn-primary" onclick="confirmBulkAllocation()">
+                    <i class="fas fa-play me-2"></i>Confirm Allocation
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Individual Allocation Modal -->
+<div class="modal fade" id="allocationModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title"><i class="fas fa-home me-2" style="color:var(--primary)"></i>Assign Residence</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            @using (Html.BeginForm("AllocateStudent", "Staff", FormMethod.Post, new { id = "allocateForm" }))
+            {
+                @Html.AntiForgeryToken()
+                <input type="hidden" id="modalStudentId" name="studentId" />
+                <input type="hidden" id="modalStudentFaculty" />
+                <input type="hidden" id="modalStudentGender" />
+
+                <div class="modal-body">
+                    <div class="alert alert-info mb-3">
+                        <i class="fas fa-user-graduate me-2"></i>
+                        <strong id="modalStudentName"></strong>
+                        <br>
+                        <small id="modalStudentDetails" style="color:var(--text-secondary)"></small>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Compatible Residences</label>
+                        <select class="form-select" id="modalResidenceId" name="residenceId" required>
+                            <option value="">-- Select Compatible Residence --</option>
+                        </select>
+                        <div class="form-text" id="residenceHelpText">
+                            Showing only residences compatible with student's faculty and gender.
+                        </div>
+                    </div>
+
+                    <div id="noResidencesAlert" class="alert alert-warning d-none">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        <strong>No Available Residences</strong><br>
+                        <small>No residences found matching this student's faculty (<span id="studentFacultyDisplay"></span>) and gender.</small>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary" id="confirmIndividualBtn">
+                        <i class="fas fa-check me-1"></i>Confirm Allocation
+                    </button>
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+<style>
+    /* Stat Cards */
+    .stat-card {
+        background: var(--bg-card) !important;
+        border: 1px solid var(--border-color) !important;
+        border-radius: 12px;
+        padding: 1.25rem;
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        transition: transform 0.2s, border-color 0.2s;
+    }
+
+        .stat-card:hover {
+            transform: translateY(-2px);
+            border-color: var(--primary) !important;
+        }
+
+    .stat-num {
+        font-family: 'Roboto', sans-serif;
+        font-size: 1.8rem;
+        font-weight: 700;
+        color: var(--text-primary);
+        line-height: 1;
+    }
+
+    .stat-label {
+        font-size: 0.78rem;
+        color: var(--text-muted);
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        margin-top: 0.2rem;
+    }
+
+    .stat-icon {
+        width: 52px;
+        height: 52px;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.4rem;
+        flex-shrink: 0;
+    }
+
+    /* Cards */
+    .card {
+        background: var(--bg-card) !important;
+        border: 1px solid var(--border-color) !important;
+        border-radius: 12px !important;
+    }
+
+    .card-header {
+        background: var(--card-header-bg) !important;
+        border-bottom: 1px solid var(--border-light) !important;
+        border-radius: 12px 12px 0 0 !important;
+        padding: 1rem 1.25rem;
+        font-weight: 600;
+        color: var(--text-primary);
+    }
+
+    /* Table */
+    .table {
+        color: var(--text-secondary) !important;
+    }
+
+        .table thead th {
+            background: var(--bg-elevated) !important;
+            color: var(--text-primary) !important;
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            border-color: var(--border-light) !important;
+            font-weight: 600;
+        }
+
+        .table tbody tr {
+            border-color: var(--border-light) !important;
+        }
+
+            .table tbody tr:hover {
+                background: var(--table-hover) !important;
+            }
+
+        .table td, .table th {
+            border-color: var(--border-light) !important;
+            color: var(--text-secondary);
+        }
+
+    /* Page Header */
+    .page-header {
+        margin-bottom: 1.5rem;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 1rem;
+    }
+
+        .page-header h1 {
+            font-family: 'Roboto', sans-serif;
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--text-primary);
+            margin: 0;
+        }
+
+    .breadcrumb-text {
+        font-size: 0.85rem;
+        color: var(--text-muted);
+        margin-top: 0.25rem;
+    }
+
+    /* Form Elements */
+    .form-control, .form-select {
+        background: var(--bg-input) !important;
+        border: 1px solid var(--border-color) !important;
+        color: var(--text-primary) !important;
+        border-radius: 8px;
+    }
+
+        .form-control:focus, .form-select:focus {
+            border-color: var(--primary) !important;
+            box-shadow: 0 0 0 3px rgba(59,130,246,0.15) !important;
+        }
+
+    .form-label {
+        color: var(--text-primary);
+        font-size: 0.85rem;
+        font-weight: 600;
+        margin-bottom: 0.5rem;
+    }
+
+    .form-text {
+        color: var(--text-muted-light) !important;
+        font-size: 0.75rem;
+        margin-top: 0.25rem;
+    }
+
+    /* Buttons */
+    .btn-primary {
+        background: var(--primary) !important;
+        border-color: var(--primary) !important;
+    }
+
+        .btn-primary:hover {
+            background: var(--primary-dark) !important;
+            border-color: var(--primary-dark) !important;
+            transform: translateY(-1px);
+        }
+
+    .btn-secondary {
+        background: var(--bg-elevated) !important;
+        border-color: var(--border-color) !important;
+        color: var(--text-primary) !important;
+    }
+
+        .btn-secondary:hover {
+            background: var(--hover-bg) !important;
+            transform: translateY(-1px);
+        }
+
+    .btn-outline-primary {
+        color: var(--primary) !important;
+        border-color: var(--primary) !important;
+    }
+
+        .btn-outline-primary:hover {
+            background: var(--primary) !important;
+            color: white !important;
+        }
+
+    .btn-outline-danger {
+        color: #ef4444 !important;
+        border-color: #ef4444 !important;
+    }
+
+        .btn-outline-danger:hover {
+            background: #ef4444 !important;
+            color: white !important;
+        }
+
+    /* Alerts */
+    .alert-success {
+        background: rgba(34,197,94,0.1) !important;
+        border: 1px solid rgba(34,197,94,0.2) !important;
+        color: var(--text-primary) !important;
+        border-radius: 12px;
+    }
+
+    [data-theme="light"] .alert-success {
+        background: #d4edda !important;
+        color: #155724 !important;
+        border-color: #c3e6cb !important;
+    }
+
+    .alert-danger {
+        background: rgba(239,68,68,0.1) !important;
+        border: 1px solid rgba(239,68,68,0.2) !important;
+        color: #ef4444 !important;
+        border-radius: 12px;
+    }
+
+    [data-theme="light"] .alert-danger {
+        background: #f8d7da !important;
+        color: #721c24 !important;
+        border-color: #f5c6cb !important;
+    }
+
+    .alert-info {
+        background: rgba(59,130,246,0.1) !important;
+        border: 1px solid rgba(59,130,246,0.2) !important;
+        color: var(--text-primary) !important;
+        border-radius: 12px;
+    }
+
+    [data-theme="light"] .alert-info {
+        background: #d1ecf1 !important;
+        color: #0c5460 !important;
+        border-color: #bee5eb !important;
+    }
+
+    .alert-warning {
+        background: rgba(245,158,11,0.1) !important;
+        border: 1px solid rgba(245,158,11,0.2) !important;
+        color: var(--text-primary) !important;
+        border-radius: 12px;
+    }
+
+    [data-theme="light"] .alert-warning {
+        background: #fff3cd !important;
+        color: #856404 !important;
+        border-color: #ffeeba !important;
+    }
+
+    /* Modal */
+    .modal-content {
+        background: var(--modal-bg) !important;
+        border: 1px solid var(--modal-border) !important;
+        border-radius: 16px;
+    }
+
+    .modal-header {
+        border-bottom: 1px solid var(--border-light) !important;
+    }
+
+    .modal-footer {
+        border-top: 1px solid var(--border-light) !important;
+    }
+
+    .modal-title {
+        color: var(--text-primary);
+    }
+
+    /* Progress Bar */
+    .progress {
+        background: var(--progress-bg) !important;
+        border-radius: 4px;
+    }
+
+    /* Light mode overrides */
+    [data-theme="light"] .stat-num {
+        color: #1a1a2e;
+    }
+
+    [data-theme="light"] .card-header {
+        color: #1a1a2e;
+    }
+
+    [data-theme="light"] .btn-secondary {
+        background: #f8f9fa !important;
+        border-color: #dee2e6 !important;
+        color: #1a1a2e !important;
+    }
+
+    [data-theme="light"] .modal-content {
+        background: #ffffff !important;
+    }
+</style>
+
+@section Scripts {
+    <script>
+        // Store residence data for client-side filtering
+        const residenceData = @Html.Raw(Json.Encode(ViewBag.ResidenceData));
+
+        function normalizeFaculty(faculty) {
+            if (!faculty) return null;
+            return faculty.toLowerCase().trim().replace(/ & /g, ' and ');
+        }
+
+        $(document).ready(function () {
+            $('#studentsTable').DataTable({
+                pageLength: 15,
+                order: [[1, 'asc']],
+                language: {
+                    search: "Search:",
+                    lengthMenu: "Show _MENU_ entries",
+                    info: "Showing _START_ to _END_ of _TOTAL_ students",
+                    paginate: {
+                        previous: "Previous",
+                        next: "Next"
+                    }
+                }
+            });
+            $('#residenceSummaryTable').DataTable({
+                pageLength: 10,
+                order: [[5, 'desc']],
+                searching: false,
+                lengthChange: false
+            });
+        });
+
+        function toggleSelectAll(v) {
+            document.querySelectorAll('.student-checkbox').forEach(cb => cb.checked = v);
+        }
+
+        function getSelectedStudentIds() {
+            const ids = [];
+            document.querySelectorAll('.student-checkbox:checked').forEach(cb => ids.push(parseInt(cb.value)));
+            return ids;
+        }
+
+        function allocateSelectedStudents() {
+            const ids = getSelectedStudentIds();
+            if (ids.length === 0) {
+                alert('Please select at least one student to allocate.');
+                return;
+            }
+            document.getElementById('bulkStudentCount').textContent = ids.length;
+            document.getElementById('bulkResidenceId').value = '';
+            new bootstrap.Modal(document.getElementById('bulkAllocationModal')).show();
+        }
+
+        function confirmBulkAllocation() {
+            const ids = getSelectedStudentIds();
+            const residenceId = document.getElementById('bulkResidenceId').value;
+            const btn = document.getElementById('confirmBulkBtn');
+            const original = btn.innerHTML;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Allocating...';
+            btn.disabled = true;
+
+            var postData = $.param({ studentIds: ids }, true);
+            if (residenceId) postData += '&residenceId=' + encodeURIComponent(residenceId);
+            postData += '&__RequestVerificationToken=' + encodeURIComponent($('input[name="__RequestVerificationToken"]').first().val());
+
+            $.ajax({
+                url: '@Url.Action("BulkAllocateStudents", "Staff")',
+                type: 'POST',
+                contentType: 'application/x-www-form-urlencoded',
+                data: postData,
+                success: function (r) {
+                    bootstrap.Modal.getInstance(document.getElementById('bulkAllocationModal')).hide();
+                    if (r.success) {
+                        var msg = r.allocatedCount === r.total
+                            ? 'Successfully allocated all ' + r.allocatedCount + ' student(s).'
+                            : 'Allocated ' + r.allocatedCount + ' out of ' + r.total + ' student(s).';
+
+                        if (r.allocatedCount < r.total) {
+                            msg += '\n\nSome students could not be allocated due to faculty/gender restrictions or capacity limits.';
+                        }
+                        alert(msg);
+                        location.reload();
+                    } else {
+                        alert('Error: ' + r.message);
+                        btn.innerHTML = original;
+                        btn.disabled = false;
+                    }
+                },
+                error: function () {
+                    bootstrap.Modal.getInstance(document.getElementById('bulkAllocationModal')).hide();
+                    alert('An error occurred during bulk allocation.');
+                    btn.innerHTML = original;
+                    btn.disabled = false;
+                }
+            });
+        }
+
+        function openAllocationModal(studentId, gender, faculty, studentName) {
+            document.getElementById('modalStudentId').value = studentId;
+            document.getElementById('modalStudentFaculty').value = faculty;
+            document.getElementById('modalStudentGender').value = gender;
+            document.getElementById('modalStudentName').textContent = studentName;
+            document.getElementById('modalStudentDetails').innerHTML =
+                '<strong>Gender:</strong> ' + gender + '  |  <strong>Faculty:</strong> ' + faculty;
+            populateResidenceDropdown(gender, faculty);
+            new bootstrap.Modal(document.getElementById('allocationModal')).show();
+        }
+
+        function populateResidenceDropdown(studentGender, studentFaculty) {
+            const dropdown = document.getElementById('modalResidenceId');
+            const noResidencesAlert = document.getElementById('noResidencesAlert');
+            const confirmBtn = document.getElementById('confirmIndividualBtn');
+            const helpText = document.getElementById('residenceHelpText');
+            const normalizedStudentFaculty = normalizeFaculty(studentFaculty);
+            dropdown.innerHTML = '<option value="">-- Select Compatible Residence --</option>';
+            const compatibleResidences = residenceData.filter(r => {
+                const genderMatch = r.GenderPolicy === "Mixed" || r.GenderPolicy === studentGender;
+                const facultyMatch = !r.Faculty || r.Faculty === normalizedStudentFaculty;
+                const hasSpace = r.Available > 0;
+                return genderMatch && facultyMatch && hasSpace;
+            });
+
+            if (compatibleResidences.length === 0) {
+                dropdown.disabled = true;
+                noResidencesAlert.classList.remove('d-none');
+                document.getElementById('studentFacultyDisplay').textContent = studentFaculty;
+                confirmBtn.disabled = true;
+                helpText.innerHTML = '<span class="text-warning"><i class="fas fa-exclamation-triangle"></i> No compatible residences available.</span>';
+            } else {
+                dropdown.disabled = false;
+                noResidencesAlert.classList.add('d-none');
+                confirmBtn.disabled = false;
+                helpText.innerHTML = '<span class="text-success"><i class="fas fa-check-circle"></i> ' + compatibleResidences.length + ' compatible residence(s) found.</span>';
+                compatibleResidences.forEach(r => {
+                    const option = document.createElement('option');
+                    option.value = r.ResidenceID;
+                    const facultyText = r.OriginalFaculty ? r.OriginalFaculty : 'All Faculties';
+                    option.textContent = `${r.Name} (${r.Available} spaces) - ${facultyText}`;
+                    dropdown.appendChild(option);
+                });
+            }
+        }
+    </script>
+}

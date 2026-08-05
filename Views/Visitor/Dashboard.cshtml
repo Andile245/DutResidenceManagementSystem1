@@ -1,0 +1,613 @@
+@model DUTResManagementSystem.ViewModels.VisitorDashboardViewModel
+
+@{
+    ViewBag.Title = "Security Dashboard";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<!-- Page Header -->
+<div class="page-header">
+    <div>
+        <h1><i class="fas fa-shield-alt me-2" style="color:var(--primary)"></i>Security Dashboard</h1>
+        <div class="breadcrumb-text">
+            <i class="fas fa-building me-1"></i>
+            <strong>@Model.ResidenceName</strong> — Visitor Movement Log
+        </div>
+    </div>
+    <div class="d-flex gap-2">
+        <span class="badge" style="background:rgba(59,130,246,0.15);color:var(--primary);border:1px solid rgba(59,130,246,0.3);padding:0.5rem 0.75rem;">
+            <i class="fas fa-clock me-1"></i>Visiting hours 08:00 - 00:00
+        </span>
+    </div>
+</div>
+
+@if (TempData["SuccessMessage"] != null)
+{
+    <div class="alert alert-success alert-dismissible fade show mb-3">
+        <i class="fas fa-check-circle me-2"></i>@TempData["SuccessMessage"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+}
+@if (TempData["ErrorMessage"] != null)
+{
+    <div class="alert alert-danger alert-dismissible fade show mb-3">
+        <i class="fas fa-exclamation-circle me-2"></i>@TempData["ErrorMessage"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+}
+
+<!-- Stat Cards -->
+<div class="row g-3 mb-4">
+    <div class="col-xl-2 col-md-4 col-sm-6">
+        <div class="stat-card">
+            <div class="stat-icon" style="background:rgba(59,130,246,0.15);color:var(--primary)">
+                <i class="fas fa-users"></i>
+            </div>
+            <div>
+                <div class="stat-num">@Model.ActiveVisitorCount</div>
+                <div class="stat-label">Inside Now</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-xl-2 col-md-4 col-sm-6">
+        <div class="stat-card">
+            <div class="stat-icon" style="background:rgba(245,158,11,0.15);color:#f59e0b">
+                <i class="fas fa-clock"></i>
+            </div>
+            <div>
+                <div class="stat-num">@Model.PendingEntryCount</div>
+                <div class="stat-label">Pending Entry</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-xl-2 col-md-4 col-sm-6">
+        <div class="stat-card">
+            <div class="stat-icon" style="background:rgba(34,197,94,0.15);color:#22c55e">
+                <i class="fas fa-ticket-alt"></i>
+            </div>
+            <div>
+                <div class="stat-num">@Model.TotalVisitsToday</div>
+                <div class="stat-label">Passes Today</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-xl-2 col-md-4 col-sm-6">
+        <div class="stat-card">
+            <div class="stat-icon" style="background:rgba(239,68,68,0.15);color:#ef4444">
+                <i class="fas fa-sign-out-alt"></i>
+            </div>
+            <div>
+                <div class="stat-num">@Model.ExitsToday</div>
+                <div class="stat-label">Exits Today</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-xl-2 col-md-4 col-sm-6">
+        <div class="stat-card">
+            <div class="stat-icon" style="background:rgba(139,92,246,0.15);color:#8b5cf6">
+                <i class="fas fa-user-graduate"></i>
+            </div>
+            <div>
+                <div class="stat-num">@Model.UniqueStudentsVisitedToday</div>
+                <div class="stat-label">Students Visited</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-xl-2 col-md-4 col-sm-6">
+        <div class="stat-card">
+            <div class="stat-icon" style="background:rgba(245,158,11,0.15);color:#f59e0b">
+                <i class="fas fa-bell"></i>
+            </div>
+            <div>
+                <div class="stat-num" style="color:#f59e0b">@Model.CurfewAlertCount</div>
+                <div class="stat-label">Curfew Alerts</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Quick Actions -->
+<!-- Quick Actions -->
+<div class="card mb-4">
+    <div class="card-header">
+        <i class="fas fa-bolt me-2" style="color:var(--primary)"></i>Quick Actions
+    </div>
+    <div class="card-body">
+        <div class="row g-3">
+            <div class="col-md-6 col-sm-6 col-12">
+                <a href="@Url.Action("CheckIn", "Visitor")" class="action-card">
+                    <div class="action-card-icon" style="background:rgba(59,130,246,0.15);color:var(--primary)">
+                        <i class="fas fa-user-plus"></i>
+                    </div>
+                    <h6>Scan Visitor</h6>
+                    <p>Log entry or exit</p>
+                </a>
+            </div>
+            <div class="col-md-6 col-sm-6 col-12">
+                <a href="@Url.Action("ViewAnnouncements", "Staff")" class="action-card">
+                    <div class="action-card-icon" style="background:rgba(59,130,246,0.15);color:var(--primary)">
+                        <i class="fas fa-bullhorn"></i>
+                    </div>
+                    <h6>Announcements</h6>
+                    <p>View announcements</p>
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+<!-- Visitor QR Section -->
+<div class="row g-3 mb-4">
+    <div class="col-md-4">
+@if (Model.LatestGeneratedVisitor != null)
+        {
+            <div class="card mt-3">
+                <div class="card-header">
+                    <i class="fas fa-id-card me-2" style="color:var(--primary)"></i>Latest Card Scan
+                </div>
+                <div class="card-body">
+                    <h6 class="mb-1" style="color:var(--text-primary)">@Model.LatestGeneratedVisitor.FullName</h6>
+                    <p class="text-muted mb-2 small">Visiting @Model.LatestGeneratedVisitor.StudentDisplayName</p>
+                    <div class="d-flex gap-2 flex-wrap mb-3">
+                        <span class="badge" style="background:var(--bg-elevated);color:var(--text-secondary)">Room @Model.LatestGeneratedVisitor.RoomNumber</span>
+                        <span class="badge" style="background:rgba(59,130,246,0.15);color:var(--primary)">@Model.LatestGeneratedVisitor.CurrentStatus</span>
+                    </div>
+                    <div class="border rounded p-3 text-center mb-3" style="background:var(--bg-elevated);border-color:var(--border-color)!important">
+                        @Html.Raw(Model.LatestGeneratedVisitor.QrCodeSvg)
+                    </div>
+                    <div class="alert alert-info small mb-3">The card scan logged this visit. This QR remains available as a backup entry or exit code.</div>
+                    <a href="@Url.Action("PrintablePass", "Visitor", new { id = Model.LatestGeneratedVisitor.VisitorID })" target="_blank" class="btn btn-outline-primary w-100 btn-sm">
+                        <i class="fas fa-print me-2"></i>Print Visitor Pass
+                    </a>
+                </div>
+            </div>
+        }
+    </div>
+
+    <!-- Open Visits -->
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <span><i class="fas fa-door-open me-2" style="color:var(--primary)"></i>Open Visits</span>
+                <span class="badge" style="background:var(--primary-light);color:var(--primary)">@Model.OpenVisitorPasses.Count</span>
+            </div>
+            <div class="card-body">
+                @if (Model.OpenVisitorPasses.Any())
+                {
+                    <div class="row g-3">
+                        @foreach (var visitor in Model.OpenVisitorPasses)
+                        {
+                            string statusBg = visitor.CurrentStatus == "Inside" ? "rgba(34,197,94,0.15)" : visitor.CurrentStatus == "Curfew Reached" ? "rgba(239,68,68,0.15)" : "rgba(245,158,11,0.15)";
+                            string statusColor = visitor.CurrentStatus == "Inside" ? "#22c55e" : visitor.CurrentStatus == "Curfew Reached" ? "#ef4444" : "#f59e0b";
+
+                            <div class="col-md-6">
+                                <div class="border rounded p-3 h-100" style="background:var(--bg-elevated);border-color:var(--border-color)!important">
+                                    <div class="d-flex justify-content-between align-items-start gap-2">
+                                        <div>
+                                            <div class="fw-semibold" style="color:var(--text-primary)">@visitor.FullName</div>
+                                            <div class="small text-muted">@visitor.StudentDisplayName</div>
+                                        </div>
+                                        <span class="badge" style="background:@statusBg;color:@statusColor;border:1px solid @statusColor">
+                                            @visitor.CurrentStatus
+                                        </span>
+                                    </div>
+                                    <div class="small mt-2">Room: <strong>@visitor.RoomNumber</strong></div>
+                                    <div class="small">Pass Created: @visitor.PassCreatedAt.ToString("dd MMM HH:mm")</div>
+                                    <div class="small">Entry: @(visitor.EntryTime.HasValue ? visitor.EntryTime.Value.ToString("dd MMM HH:mm") : "Awaiting entry scan")</div>
+                                    <div class="small mb-2">Exit: @(visitor.ExitTime.HasValue ? visitor.ExitTime.Value.ToString("dd MMM HH:mm") : "Not yet logged")</div>
+                                    <div class="border rounded p-2 text-center mb-2" style="background:var(--bg-card);border-color:var(--border-color)!important">
+                                        @Html.Raw(visitor.QrCodeSvg)
+                                    </div>
+                                    <div class="small text-muted mb-2">Scan the visitor card again to log exit. QR is available as backup.</div>
+                                    <div class="d-flex gap-2 flex-wrap">
+                                        <a href="@Url.Action("PrintablePass", "Visitor", new { id = visitor.VisitorID })" target="_blank" class="btn btn-sm btn-outline-secondary">
+                                            <i class="fas fa-print me-1"></i>Print Pass
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                }
+                else
+                {
+                    <div class="text-center py-4" style="color:var(--text-muted)">
+                        <i class="fas fa-ticket-alt fa-3x mb-3"></i>
+                        <p class="mb-0">No open visits yet.</p>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Active Visitors Table -->
+<div class="card">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <span><i class="fas fa-users me-2" style="color:#22c55e"></i>Visitors Currently Inside</span>
+        <a href="@Url.Action("ActiveVisitors", "Visitor")" class="btn btn-sm btn-outline-primary">
+            <i class="fas fa-eye me-1"></i>View All
+        </a>
+    </div>
+    <div class="card-body p-0">
+        @if (Model.ActiveVisitors.Any())
+        {
+            <div class="table-responsive">
+                <table class="table mb-0" id="activeVisitorsTable">
+                    <thead>
+                        <tr>
+                            <th>Visitor</th>
+                            <th>Student</th>
+                            <th>Room</th>
+                            <th>Timeline</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var visitor in Model.ActiveVisitors)
+                        {
+                            <tr>
+                                <td>
+                                    <div class="fw-semibold" style="color:var(--text-primary)">@visitor.FullName</div>
+                                    <div class="small text-muted">@visitor.IDNumber</div>
+                                </td>
+                                <td style="color:var(--text-secondary)">@visitor.StudentDisplayName</td>
+                                <td style="color:var(--text-secondary)">@visitor.RoomNumber</td>
+                                <td class="small">
+                                    <div>Pass: @visitor.PassCreatedAt.ToString("dd MMM HH:mm")</div>
+                                    <div>Entry: @(visitor.EntryTime.HasValue ? visitor.EntryTime.Value.ToString("dd MMM HH:mm") : "-")</div>
+                                    <div class="text-@(visitor.CurrentStatus == "Curfew Reached" ? "danger" : "success") fw-bold">@visitor.CurrentStatus</div>
+                                </td>
+                                <td class="text-end">
+                                    <a href="@Url.Action("ManualCheckOut", "Visitor", new { id = visitor.VisitorID })" class="btn btn-sm btn-outline-danger" onclick="return confirm('Check out @visitor.FullName?')">
+                                        <i class="fas fa-sign-out-alt me-1"></i>Manual Exit
+                                    </a>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+        else
+        {
+            <div class="text-center py-5" style="color:var(--text-muted)">
+                <i class="fas fa-user-check fa-3x mb-3"></i>
+                <p class="mb-0">No visitors are currently inside the residence.</p>
+            </div>
+        }
+    </div>
+</div>
+
+<style>
+    /* Stat Cards */
+    .stat-card {
+        background: var(--bg-card) !important;
+        border: 1px solid var(--border-color) !important;
+        border-radius: 12px;
+        padding: 1.25rem;
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        transition: transform 0.2s, border-color 0.2s;
+    }
+
+        .stat-card:hover {
+            transform: translateY(-2px);
+            border-color: var(--primary) !important;
+        }
+
+    .stat-num {
+        font-family: 'Roboto', sans-serif;
+        font-size: 1.8rem;
+        font-weight: 700;
+        color: var(--text-primary);
+        line-height: 1;
+    }
+
+    .stat-label {
+        font-size: 0.78rem;
+        color: var(--text-muted);
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        margin-top: 0.2rem;
+    }
+
+    .stat-icon {
+        width: 52px;
+        height: 52px;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.4rem;
+        flex-shrink: 0;
+    }
+
+    /* Action Cards */
+    .action-card {
+        background: var(--bg-elevated) !important;
+        border: 1px solid var(--border-color) !important;
+        border-radius: 12px;
+        padding: 1rem;
+        text-align: center;
+        text-decoration: none;
+        color: var(--text-secondary);
+        display: block;
+        transition: all 0.2s;
+    }
+
+        .action-card:hover {
+            border-color: var(--primary) !important;
+            background: var(--primary-light) !important;
+            transform: translateY(-3px);
+            color: var(--text-primary);
+        }
+
+    .action-card-icon {
+        width: 48px;
+        height: 48px;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.3rem;
+        margin: 0 auto 0.75rem;
+    }
+
+    .action-card h6 {
+        font-weight: 700;
+        color: var(--text-primary);
+        margin-bottom: 0.3rem;
+        font-size: 0.85rem;
+    }
+
+    .action-card p {
+        font-size: 0.7rem;
+        color: var(--text-muted);
+        margin: 0;
+    }
+
+    /* Card */
+    .card {
+        background: var(--bg-card) !important;
+        border: 1px solid var(--border-color) !important;
+        border-radius: 12px !important;
+    }
+
+    .card-header {
+        background: var(--card-header-bg) !important;
+        border-bottom: 1px solid var(--border-light) !important;
+        border-radius: 12px 12px 0 0 !important;
+        padding: 1rem 1.25rem;
+        font-weight: 600;
+        color: var(--text-primary);
+    }
+
+    .card-body {
+        background: var(--bg-card) !important;
+    }
+
+    /* Table */
+    .table {
+        color: var(--text-secondary) !important;
+    }
+
+        .table thead th {
+            background: var(--bg-elevated) !important;
+            color: var(--text-primary) !important;
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            border-color: var(--border-light) !important;
+            font-weight: 600;
+        }
+
+        .table tbody tr {
+            border-color: var(--border-light) !important;
+        }
+
+            .table tbody tr:hover {
+                background: var(--table-hover) !important;
+            }
+
+        .table td, .table th {
+            border-color: var(--border-light) !important;
+            color: var(--text-secondary);
+        }
+
+    /* Page Header */
+    .page-header {
+        margin-bottom: 1.5rem;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 1rem;
+    }
+
+        .page-header h1 {
+            font-family: 'Roboto', sans-serif;
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--text-primary);
+            margin: 0;
+        }
+
+    .breadcrumb-text {
+        font-size: 0.85rem;
+        color: var(--text-muted);
+        margin-top: 0.25rem;
+    }
+
+    /* Form Elements */
+    .form-control, .form-select {
+        background: var(--bg-input) !important;
+        border: 1px solid var(--border-color) !important;
+        color: var(--text-primary) !important;
+        border-radius: 8px;
+    }
+
+        .form-control:focus, .form-select:focus {
+            border-color: var(--primary) !important;
+            box-shadow: 0 0 0 3px rgba(59,130,246,0.15) !important;
+        }
+
+    .form-label {
+        color: var(--text-primary);
+        font-size: 0.85rem;
+        font-weight: 600;
+        margin-bottom: 0.5rem;
+    }
+
+    /* Buttons */
+    .btn-primary {
+        background: var(--primary) !important;
+        border-color: var(--primary) !important;
+    }
+
+        .btn-primary:hover {
+            background: var(--primary-dark) !important;
+            border-color: var(--primary-dark) !important;
+            transform: translateY(-1px);
+        }
+
+    .btn-secondary {
+        background: var(--bg-elevated) !important;
+        border-color: var(--border-color) !important;
+        color: var(--text-primary) !important;
+    }
+
+        .btn-secondary:hover {
+            background: var(--hover-bg) !important;
+            transform: translateY(-1px);
+        }
+
+    .btn-outline-primary {
+        color: var(--primary) !important;
+        border-color: var(--primary) !important;
+    }
+
+        .btn-outline-primary:hover {
+            background: var(--primary) !important;
+            color: white !important;
+        }
+
+    .btn-outline-secondary {
+        color: var(--text-secondary) !important;
+        border-color: var(--border-color) !important;
+    }
+
+        .btn-outline-secondary:hover {
+            background: var(--hover-bg) !important;
+            color: var(--text-primary) !important;
+        }
+
+    .btn-outline-danger {
+        color: #ef4444 !important;
+        border-color: #ef4444 !important;
+    }
+
+        .btn-outline-danger:hover {
+            background: #ef4444 !important;
+            color: white !important;
+        }
+
+    .btn-outline-info {
+        color: #0e7490 !important;
+        border-color: #0e7490 !important;
+    }
+
+        .btn-outline-info:hover {
+            background: #0e7490 !important;
+            color: white !important;
+        }
+
+    .btn-success {
+        background: #22c55e !important;
+        border-color: #22c55e !important;
+    }
+
+        .btn-success:hover {
+            background: #16a34a !important;
+            border-color: #16a34a !important;
+        }
+
+    .btn-danger {
+        background: #ef4444 !important;
+        border-color: #ef4444 !important;
+    }
+
+        .btn-danger:hover {
+            background: #dc2626 !important;
+            border-color: #dc2626 !important;
+        }
+
+    /* Alerts */
+    .alert-success {
+        background: rgba(34,197,94,0.1) !important;
+        border: 1px solid rgba(34,197,94,0.2) !important;
+        color: var(--text-primary) !important;
+        border-radius: 12px;
+    }
+
+    [data-theme="light"] .alert-success {
+        background: #d4edda !important;
+        color: #155724 !important;
+        border-color: #c3e6cb !important;
+    }
+
+    .alert-danger {
+        background: rgba(239,68,68,0.1) !important;
+        border: 1px solid rgba(239,68,68,0.2) !important;
+        color: #ef4444 !important;
+        border-radius: 12px;
+    }
+
+    [data-theme="light"] .alert-danger {
+        background: #f8d7da !important;
+        color: #721c24 !important;
+        border-color: #f5c6cb !important;
+    }
+
+    .alert-info {
+        background: rgba(59,130,246,0.1) !important;
+        border: 1px solid rgba(59,130,246,0.2) !important;
+        color: var(--text-primary) !important;
+        border-radius: 12px;
+    }
+
+    [data-theme="light"] .alert-info {
+        background: #d1ecf1 !important;
+        color: #0c5460 !important;
+        border-color: #bee5eb !important;
+    }
+
+    /* Light mode overrides */
+    [data-theme="light"] .stat-num {
+        color: #1a1a2e;
+    }
+
+    [data-theme="light"] .card-header {
+        color: #1a1a2e;
+    }
+</style>
+
+@section Scripts {
+    <script>
+        $(document).ready(function () {
+            $('#activeVisitorsTable').DataTable({
+                pageLength: 10,
+                order: [[0, 'asc']],
+                language: {
+                    search: "Search:",
+                    lengthMenu: "Show _MENU_ entries",
+                    info: "Showing _START_ to _END_ of _TOTAL_ visitors",
+                    paginate: {
+                        previous: "Previous",
+                        next: "Next"
+                    }
+                }
+            });
+        });
+    </script>
+}

@@ -1,0 +1,150 @@
+@model DUTResManagementSystem.ViewModels.EmergencyRollCallViewModel
+@using System.Linq
+
+@{
+    ViewBag.Title = "Emergency Roll Call";
+    var safeCount = Model.People.Count(p => p.SafetyStatus == "Safe");
+    var missingCount = Model.People.Count(p => p.SafetyStatus == "Missing");
+    var outsideCount = Model.People.Count(p => p.SafetyStatus == "Outside");
+    var unknownCount = Model.People.Count(p => p.SafetyStatus == "Unknown");
+}
+
+<div class="page-header">
+    <div>
+        <h1><i class="fas fa-clipboard-list me-2" style="color:var(--primary)"></i>@Model.RollCall.IncidentTitle</h1>
+        <div class="breadcrumb-text">
+            @(Model.RollCall.Residence != null ? Model.RollCall.Residence.Name : "Residence") -
+            started @Model.RollCall.StartedAt.ToString("dd MMM yyyy HH:mm") -
+            @Model.RollCall.Status
+        </div>
+    </div>
+    <a href="@Url.Action("Semester2Operations", "Staff")" class="btn btn-secondary">
+        <i class="fas fa-arrow-left me-2"></i>Back
+    </a>
+</div>
+
+@if (TempData["SuccessMessage"] != null)
+{
+    <div class="alert alert-success">@TempData["SuccessMessage"]</div>
+}
+@if (TempData["ErrorMessage"] != null)
+{
+    <div class="alert alert-danger">@TempData["ErrorMessage"]</div>
+}
+
+<div class="row g-3 mb-4">
+    <div class="col-md-3">
+        <div class="stat-card">
+            <div class="stat-icon green"><i class="fas fa-check"></i></div>
+            <div>
+                <div class="stat-num">@safeCount</div>
+                <div class="stat-label">Safe</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="stat-card">
+            <div class="stat-icon red"><i class="fas fa-search"></i></div>
+            <div>
+                <div class="stat-num">@missingCount</div>
+                <div class="stat-label">Missing</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="stat-card">
+            <div class="stat-icon purple"><i class="fas fa-walking"></i></div>
+            <div>
+                <div class="stat-num">@outsideCount</div>
+                <div class="stat-label">Outside</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="stat-card">
+            <div class="stat-icon yellow"><i class="fas fa-question"></i></div>
+            <div>
+                <div class="stat-num">@unknownCount</div>
+                <div class="stat-label">Unknown</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@if (!string.IsNullOrWhiteSpace(Model.RollCall.IncidentNotes))
+{
+    <div class="alert alert-info">@Model.RollCall.IncidentNotes</div>
+}
+
+<div class="card">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <span><i class="fas fa-users me-2"></i>People To Verify</span>
+        @if (Model.RollCall.Status == "Open")
+        {
+            using (Html.BeginForm("CloseEmergencyRollCall", "Staff", FormMethod.Post, new { @class = "mb-0" }))
+            {
+                @Html.AntiForgeryToken()
+                @Html.Hidden("id", Model.RollCall.EmergencyRollCallID)
+                <button class="btn btn-sm btn-danger" type="submit">
+                    <i class="fas fa-lock me-1"></i>Close Roll Call
+                </button>
+            }
+        }
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table mb-0 align-middle">
+                <thead>
+                    <tr>
+                        <th>Person</th>
+                        <th>Type</th>
+                        <th>Room / Host</th>
+                        <th>Status</th>
+                        <th>Notes</th>
+                        <th style="width:260px">Update</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var person in Model.People)
+                    {
+                        <tr>
+                            <td>@person.DisplayName</td>
+                            <td>@person.PersonType</td>
+                            <td>@person.RoomNumber</td>
+                            <td>
+                                <span class="badge bg-@(person.SafetyStatus == "Safe" ? "success" : person.SafetyStatus == "Missing" ? "danger" : person.SafetyStatus == "Outside" ? "info" : "warning")">
+                                    @person.SafetyStatus
+                                </span>
+                            </td>
+                            <td>@person.Notes</td>
+                            <td>
+                                @if (Model.RollCall.Status == "Open")
+                                {
+                                    using (Html.BeginForm("MarkRollCallPerson", "Staff", FormMethod.Post, new { @class = "d-flex gap-2" }))
+                                    {
+                                        @Html.AntiForgeryToken()
+                                        @Html.Hidden("personId", person.EmergencyRollCallPersonID)
+                                        <select class="form-control form-control-sm" name="safetyStatus" aria-label="Safety status">
+                                            <option @(person.SafetyStatus == "Safe" ? "selected" : "")>Safe</option>
+                                            <option @(person.SafetyStatus == "Missing" ? "selected" : "")>Missing</option>
+                                            <option @(person.SafetyStatus == "Outside" ? "selected" : "")>Outside</option>
+                                            <option @(person.SafetyStatus == "Unknown" ? "selected" : "")>Unknown</option>
+                                        </select>
+                                        <input class="form-control form-control-sm" name="notes" value="@person.Notes" placeholder="Notes" />
+                                        <button class="btn btn-sm btn-primary" type="submit" title="Save status">
+                                            <i class="fas fa-save"></i>
+                                        </button>
+                                    }
+                                }
+                                else
+                                {
+                                    <span class="text-muted">Closed</span>
+                                }
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>

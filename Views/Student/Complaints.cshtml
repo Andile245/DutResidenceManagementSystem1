@@ -1,0 +1,326 @@
+@model IEnumerable<DUTResManagementSystem.ViewModels.ComplaintSummaryViewModel>
+
+@{
+    ViewBag.Title = "My Complaints";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<style>
+    .complaints-page {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 0;
+    }
+
+    .page-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 30px;
+        flex-wrap: wrap;
+        gap: 16px;
+    }
+
+    .page-header h1 {
+        font-size: 22px;
+        font-weight: 700;
+        margin: 0 0 5px 0;
+        color: var(--text-primary);
+    }
+
+    .page-header p {
+        color: var(--text-muted);
+        margin: 0;
+        font-size: 13px;
+    }
+
+    .btn-primary {
+        background: var(--primary);
+        color: white;
+        padding: 10px 20px;
+        border-radius: 6px;
+        text-decoration: none;
+        font-size: 13px;
+        font-weight: 600;
+        display: inline-block;
+        transition: all 0.2s;
+    }
+
+    .btn-primary:hover {
+        background: var(--primary-dark);
+        transform: translateY(-2px);
+        color: white;
+    }
+
+    .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+        gap: 14px;
+        margin-bottom: 28px;
+    }
+
+    .stat-card {
+        background: var(--bg-card);
+        border: 1px solid var(--border-color);
+        border-radius: 10px;
+        padding: 18px;
+        text-align: center;
+        transition: all 0.2s;
+    }
+
+    .stat-card:hover {
+        border-color: var(--primary);
+        transform: translateY(-2px);
+    }
+
+    .stat-number {
+        font-size: 28px;
+        font-weight: 800;
+        margin-bottom: 5px;
+        color: var(--text-primary);
+    }
+
+    .stat-label {
+        font-size: 12px;
+        color: var(--text-muted);
+    }
+
+    .complaints-table-container {
+        background: var(--bg-card);
+        border: 1px solid var(--border-color);
+        border-radius: 10px;
+        overflow: auto;
+    }
+
+    .complaints-table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+
+    .complaints-table th {
+        text-align: left;
+        padding: 14px 16px;
+        background: var(--bg-elevated);
+        color: var(--text-secondary);
+        font-size: 11px;
+        font-weight: 600;
+        text-transform: uppercase;
+        border-bottom: 1px solid var(--border-light);
+    }
+
+    .complaints-table td {
+        padding: 14px 16px;
+        border-bottom: 1px solid var(--border-light);
+        color: var(--text-secondary);
+        font-size: 13px;
+    }
+
+    .complaints-table tr:last-child td {
+        border-bottom: none;
+    }
+
+    .complaints-table tbody tr:hover {
+        background: var(--table-hover);
+    }
+
+    .status-badge {
+        display: inline-block;
+        padding: 4px 10px;
+        border-radius: 20px;
+        font-size: 11px;
+        font-weight: 600;
+    }
+
+    .status-pending {
+        background: rgba(212, 148, 61, 0.12);
+        color: #d4943d;
+        border: 1px solid rgba(212, 148, 61, 0.3);
+    }
+
+    .status-inprogress {
+        background: rgba(61, 111, 212, 0.12);
+        color: #3d6fd4;
+        border: 1px solid rgba(61, 111, 212, 0.3);
+    }
+
+    .status-resolved {
+        background: rgba(45, 184, 122, 0.12);
+        color: #2db87a;
+        border: 1px solid rgba(45, 184, 122, 0.3);
+    }
+
+    /* Light mode overrides for status badges */
+    [data-theme="light"] .status-pending {
+        background: #fff3cd;
+        color: #856404;
+        border-color: #ffeeba;
+    }
+
+    [data-theme="light"] .status-inprogress {
+        background: #d1ecf1;
+        color: #0c5460;
+        border-color: #bee5eb;
+    }
+
+    [data-theme="light"] .status-resolved {
+        background: #d4edda;
+        color: #155724;
+        border-color: #c3e6cb;
+    }
+
+    .empty-state {
+        text-align: center;
+        padding: 60px 20px;
+    }
+
+    .empty-state p {
+        color: var(--text-muted);
+        margin-bottom: 20px;
+    }
+
+    .feedback-preview {
+        max-width: 250px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        color: var(--text-muted);
+        font-size: 12px;
+    }
+
+    .alert-success-custom {
+        background: rgba(45, 184, 122, 0.1);
+        border: 1px solid rgba(45, 184, 122, 0.3);
+        color: #2db87a;
+        padding: 12px 16px;
+        border-radius: 6px;
+        margin-bottom: 20px;
+    }
+
+    .alert-error-custom {
+        background: rgba(212, 74, 61, 0.1);
+        border: 1px solid rgba(212, 74, 61, 0.3);
+        color: #d44a3d;
+        padding: 12px 16px;
+        border-radius: 6px;
+        margin-bottom: 20px;
+    }
+
+    [data-theme="light"] .alert-success-custom {
+        background: #d4edda;
+        color: #155724;
+        border-color: #c3e6cb;
+    }
+
+    [data-theme="light"] .alert-error-custom {
+        background: #f8d7da;
+        color: #721c24;
+        border-color: #f5c6cb;
+    }
+
+    @@media (max-width: 768px) {
+        .complaints-table th,
+        .complaints-table td {
+            padding: 10px 12px;
+        }
+    }
+</style>
+
+<div class="complaints-page">
+    <div class="page-header">
+        <div>
+            <h1>My Complaints</h1>
+            <p>Track the status and responses for all complaints you have submitted.</p>
+        </div>
+        @Html.ActionLink("+ Submit New Complaint", "CreateComplaint", "Student", null, new { @class = "btn-primary" })
+    </div>
+
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="alert-success-custom">
+            @TempData["SuccessMessage"]
+        </div>
+    }
+
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div class="alert-error-custom">
+            @TempData["ErrorMessage"]
+        </div>
+    }
+
+    @{
+        var total = Model.Count();
+        var pending = Model.Count(c => c.Status == "Pending");
+        var inProgress = Model.Count(c => c.Status == "In Progress");
+        var resolved = Model.Count(c => c.Status == "Resolved");
+    }
+
+    <div class="stats-grid">
+        <div class="stat-card">
+            <div class="stat-number">@total</div>
+            <div class="stat-label">Total Complaints</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-number" style="color: #d4943d;">@pending</div>
+            <div class="stat-label">Pending</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-number" style="color: #3d6fd4;">@inProgress</div>
+            <div class="stat-label">In Progress</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-number" style="color: #2db87a;">@resolved</div>
+            <div class="stat-label">Resolved</div>
+        </div>
+    </div>
+
+    <div class="complaints-table-container">
+        @if (!Model.Any())
+        {
+            <div class="empty-state">
+                <p>No complaints submitted yet.</p>
+                <p>Complaints you submit will appear here with real-time status updates from your building manager.</p>
+                @Html.ActionLink("Submit My First Complaint", "CreateComplaint", "Student", null, new { @class = "btn-primary" })
+            </div>
+        }
+        else
+        {
+            <table class="complaints-table">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Subject</th>
+                        <th>Category</th>
+                        <th>Status</th>
+                        <th>Submitted</th>
+                        <th>Last Updated</th>
+                        <th>Feedback</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var complaint in Model)
+                    {
+                        var statusClass = complaint.Status == "Pending" ? "status-pending" :
+                                         (complaint.Status == "In Progress" ? "status-inprogress" : "status-resolved");
+
+                        <tr>
+                            <td>#@complaint.ComplaintId</td>
+                            <td><strong>@complaint.Subject</strong></td>
+                            <td>@complaint.Category</td>
+                            <td>
+                                <span class="status-badge @statusClass">
+                                    @(complaint.Status == "In Progress" ? "In Progress" : complaint.Status)
+                                </span>
+                            </td>
+                            <td>@complaint.DateSubmitted.ToString("dd MMM yyyy")</td>
+                            <td>@(complaint.LastUpdated?.ToString("dd MMM yyyy") ?? "-")</td>
+                            <td class="feedback-preview">
+                                @(complaint.ManagerFeedback ?? "-")
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        }
+    </div>
+</div>

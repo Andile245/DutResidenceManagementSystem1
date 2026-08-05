@@ -1,0 +1,133 @@
+@model DUTResManagementSystem.Models.RoomInspection
+@using DUTResManagementSystem.Models
+@using System.Linq
+
+@{
+    ViewBag.Title = "Room Inspection";
+    var recentInspections = ViewBag.RecentInspections as IEnumerable<RoomInspection>;
+}
+
+<div class="page-header">
+    <div>
+        <h1><i class="fas fa-clipboard-check me-2" style="color:var(--primary)"></i>Room Inspection</h1>
+        <div class="breadcrumb-text">Capture move-in, move-out and condition checks without manual paper forms</div>
+    </div>
+    <a href="@Url.Action("Semester2Operations", "Staff")" class="btn btn-secondary">
+        <i class="fas fa-arrow-left me-2"></i>Back
+    </a>
+</div>
+
+@if (TempData["SuccessMessage"] != null)
+{
+    <div class="alert alert-success">@TempData["SuccessMessage"]</div>
+}
+@if (TempData["ErrorMessage"] != null)
+{
+    <div class="alert alert-danger">@TempData["ErrorMessage"]</div>
+}
+
+<div class="row g-3">
+    <div class="col-lg-5">
+        <div class="card">
+            <div class="card-header"><i class="fas fa-door-open me-2"></i>Inspection Details</div>
+            <div class="card-body">
+                @using (Html.BeginForm("RoomInspection", "Staff", FormMethod.Post))
+                {
+                    @Html.AntiForgeryToken()
+
+                    <div class="mb-3">
+                        <label class="form-label">Room</label>
+                        @Html.DropDownListFor(m => m.RoomID, (SelectList)ViewBag.Rooms, "Select room", new { @class = "form-control", required = "required" })
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Student linked to inspection</label>
+                        @Html.DropDownListFor(m => m.StudentID, (SelectList)ViewBag.Students, "No specific student", new { @class = "form-control" })
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Inspection type</label>
+                        @Html.DropDownListFor(m => m.InspectionType, new SelectList(new[] { "Move-In", "Move-Out", "Routine", "Incident Follow-Up" }), new { @class = "form-control" })
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Condition status</label>
+                        @Html.DropDownListFor(m => m.ConditionStatus, new SelectList(new[] { "Good", "Needs Attention", "Damaged", "Unsafe" }), new { @class = "form-control" })
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Inspection notes</label>
+                        @Html.TextAreaFor(m => m.Notes, new { @class = "form-control", rows = "5", placeholder = "Record findings, damages, missing items or safety concerns" })
+                    </div>
+
+                    <div class="form-check mb-2">
+                        @Html.CheckBoxFor(m => m.RequiresMaintenance, new { @class = "form-check-input", id = "requiresMaintenance" })
+                        <label class="form-check-label" for="requiresMaintenance">Create maintenance follow-up</label>
+                    </div>
+
+                    <div class="form-check mb-3">
+                        @Html.CheckBoxFor(m => m.BlocksAllocation, new { @class = "form-check-input", id = "blocksAllocation" })
+                        <label class="form-check-label" for="blocksAllocation">Block room allocation until resolved</label>
+                    </div>
+
+                    <button class="btn btn-primary w-100" type="submit">
+                        <i class="fas fa-save me-2"></i>Record Inspection
+                    </button>
+                }
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-7">
+        <div class="card">
+            <div class="card-header"><i class="fas fa-history me-2"></i>Recent Inspections</div>
+            <div class="card-body p-0">
+                @if (recentInspections == null || !recentInspections.Any())
+                {
+                    <div class="p-4 text-muted">No room inspections captured yet.</div>
+                }
+                else
+                {
+                    <div class="table-responsive">
+                        <table class="table mb-0">
+                            <thead>
+                                <tr>
+                                    <th>Date</th>
+                                    <th>Room</th>
+                                    <th>Type</th>
+                                    <th>Status</th>
+                                    <th>Follow-up</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var item in recentInspections)
+                                {
+                                    <tr>
+                                        <td>@item.InspectionDate.ToString("dd MMM yyyy HH:mm")</td>
+                                        <td>@(item.Room != null ? item.Room.RoomNumber : "Unknown")</td>
+                                        <td>@item.InspectionType</td>
+                                        <td><span class="badge bg-@(item.ConditionStatus == "Unsafe" || item.ConditionStatus == "Damaged" ? "danger" : item.ConditionStatus == "Needs Attention" ? "warning" : "success")">@item.ConditionStatus</span></td>
+                                        <td>
+                                            @if (item.BlocksAllocation)
+                                            {
+                                                <span class="badge bg-danger">Allocation blocked</span>
+                                            }
+                                            else if (item.RequiresMaintenance)
+                                            {
+                                                <span class="badge bg-warning">Maintenance</span>
+                                            }
+                                            else
+                                            {
+                                                <span class="text-muted">None</span>
+                                            }
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+</div>

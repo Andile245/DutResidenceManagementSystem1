@@ -1,0 +1,1460 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>@ViewBag.Title - DUT Residence System</title>
+
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;600&family=Roboto:wght@500;700&display=swap" rel="stylesheet">
+
+    <!-- Font Awesome -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.10.0/css/all.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.4.1/font/bootstrap-icons.css" rel="stylesheet">
+
+    <!-- Bootstrap -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0/dist/css/bootstrap.min.css" rel="stylesheet">
+
+    <!-- DataTables -->
+    <link href="https://cdn.datatables.net/1.13.4/css/dataTables.bootstrap5.min.css" rel="stylesheet">
+
+    <!-- CRITICAL: Theme initialization script - runs before any rendering to prevent FOUC/glitch -->
+    <script>
+        (function () {
+            // Get saved theme or default to 'dark'
+            let savedTheme = localStorage.getItem('dut_theme');
+            if (!savedTheme) {
+                savedTheme = 'dark';
+                localStorage.setItem('dut_theme', 'dark');
+            }
+            // Immediately apply theme to document element and body BEFORE any CSS paints
+            document.documentElement.setAttribute('data-theme', savedTheme);
+            // Also set on body as soon as it exists (but documentElement is sufficient)
+            if (document.body) {
+                document.body.setAttribute('data-theme', savedTheme);
+            } else {
+                // If body not yet loaded, wait for DOMContentLoaded
+                document.addEventListener('DOMContentLoaded', function () {
+                    document.body.setAttribute('data-theme', savedTheme);
+                });
+            }
+        })();
+    </script>
+
+    <style>
+        /* Light Mode Variables - DEFAULT (for better visibility) */
+        :root {
+            --primary: #EF233C;
+            --primary-dark: #c41e32;
+            --primary-light: rgba(239,35,60,0.1);
+        }
+
+        /* Light Mode */
+        [data-theme="light"] {
+            --bg-body: #f5f7fb;
+            --bg-sidebar: #ffffff;
+            --bg-card: #ffffff;
+            --bg-elevated: #f8f9fa;
+            --bg-input: #ffffff;
+            --border-color: #e9ecef;
+            --border-light: #e9ecef;
+            --text-primary: #1a1a2e;
+            --text-secondary: #2d3436;
+            --text-muted: #636e72;
+            --text-muted-light: #6c757d;
+            --input-placeholder: #adb5bd;
+            --hover-bg: rgba(0,0,0,0.02);
+            --hover-border: rgba(239,35,60,0.2);
+            --shadow-color: rgba(0,0,0,0.1);
+            --progress-bg: #e9ecef;
+            --table-hover: rgba(0,0,0,0.02);
+            --modal-bg: #ffffff;
+            --modal-border: #e9ecef;
+            --toast-bg: #ffffff;
+            --dropdown-bg: #ffffff;
+            --dropdown-text: #1a1a2e;
+            --navbar-bg: #ffffff;
+            --card-header-bg: #f8f9fa;
+            --badge-light-bg: #f8f9fa;
+            --badge-light-text: #2d3436;
+            --alert-text: #1a1a2e;
+        }
+
+        /* Dark Mode */
+        [data-theme="dark"] {
+            --bg-body: #1C1C27;
+            --bg-sidebar: #23232F;
+            --bg-card: #23232F;
+            --bg-elevated: #2D2D3A;
+            --bg-input: #2D2D3A;
+            --border-color: rgba(255,255,255,0.08);
+            --border-light: rgba(255,255,255,0.06);
+            --text-primary: #E8E8F0;
+            --text-secondary: #C8C8D8;
+            --text-muted: #9B9BB0;
+            --text-muted-light: #6B6B80;
+            --input-placeholder: #6B6B80;
+            --hover-bg: rgba(255,255,255,0.03);
+            --hover-border: rgba(239,35,60,0.3);
+            --shadow-color: rgba(0,0,0,0.5);
+            --progress-bg: #2D2D3A;
+            --table-hover: rgba(255,255,255,0.03);
+            --modal-bg: #23232F;
+            --modal-border: rgba(255,255,255,0.08);
+            --toast-bg: #23232F;
+            --dropdown-bg: #2D2D3A;
+            --dropdown-text: #E8E8F0;
+            --navbar-bg: #23232F;
+            --card-header-bg: #2D2D3A;
+            --badge-light-bg: rgba(255,255,255,0.1);
+            --badge-light-text: #C8C8D8;
+            --alert-text: #C8C8D8;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Open Sans', sans-serif;
+            background: var(--bg-body);
+            color: var(--text-secondary);
+            display: flex;
+            min-height: 100vh;
+            overflow-x: hidden;
+            transition: background-color 0.2s ease, color 0.2s ease;
+        }
+
+        /* Theme Toggle Button */
+        .theme-toggle {
+            background: var(--bg-elevated);
+            border: 1px solid var(--border-color);
+            border-radius: 50px;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            color: var(--text-muted);
+        }
+
+            .theme-toggle:hover {
+                background: rgba(239,35,60,0.1);
+                color: var(--primary);
+                border-color: var(--primary);
+                transform: translateY(-2px);
+            }
+
+            .theme-toggle i {
+                font-size: 1.1rem;
+            }
+
+        /* Dark mode icon - hidden in light mode */
+        [data-theme="dark"] .theme-toggle .fa-sun {
+            display: inline-block;
+        }
+
+        [data-theme="dark"] .theme-toggle .fa-moon {
+            display: none;
+        }
+
+        [data-theme="light"] .theme-toggle .fa-sun {
+            display: none;
+        }
+
+        [data-theme="light"] .theme-toggle .fa-moon {
+            display: inline-block;
+        }
+
+        /* -- SIDEBAR -- */
+        .sidebar {
+            width: 260px;
+            min-height: 100vh;
+            background: var(--bg-sidebar);
+            border-right: 1px solid var(--border-color);
+            flex-shrink: 0;
+            position: fixed;
+            top: 0;
+            left: 0;
+            bottom: 0;
+            z-index: 1000;
+            transition: transform 0.3s ease, background-color 0.2s ease, border-color 0.2s ease;
+            overflow-y: auto;
+        }
+
+        .sidebar-brand {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 1.5rem 1.5rem 1rem;
+            border-bottom: 1px solid var(--border-color);
+            text-decoration: none;
+        }
+
+            .sidebar-brand img {
+                height: 36px;
+                border-radius: 6px;
+            }
+
+            .sidebar-brand span {
+                font-family: 'Roboto', sans-serif;
+                font-weight: 700;
+                font-size: 1.1rem;
+                color: var(--primary);
+            }
+
+        .sidebar-user {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 1rem 1.5rem;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .sidebar-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: var(--primary);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 1rem;
+            color: white;
+            flex-shrink: 0;
+            position: relative;
+        }
+
+        .sidebar-avatar-dot {
+            position: absolute;
+            bottom: 1px;
+            right: 1px;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: #22c55e;
+            border: 2px solid var(--bg-sidebar);
+        }
+
+        .sidebar-user-name {
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .sidebar-user-role {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+        }
+
+        .sidebar-nav {
+            padding: 1rem 0;
+        }
+
+            .sidebar-nav .nav-label {
+                font-size: 0.7rem;
+                font-weight: 700;
+                letter-spacing: 0.1em;
+                text-transform: uppercase;
+                color: var(--text-muted);
+                padding: 0.75rem 1.5rem 0.25rem;
+            }
+
+            .sidebar-nav a {
+                display: flex;
+                align-items: center;
+                gap: 0.75rem;
+                padding: 0.7rem 1.5rem;
+                color: var(--text-secondary);
+                text-decoration: none;
+                font-size: 0.88rem;
+                font-weight: 500;
+                transition: all 0.2s;
+                border-left: 3px solid transparent;
+            }
+
+                .sidebar-nav a i {
+                    width: 18px;
+                    text-align: center;
+                    font-size: 0.95rem;
+                }
+
+                .sidebar-nav a:hover, .sidebar-nav a.active {
+                    color: var(--text-primary);
+                    background: rgba(239,35,60,0.08);
+                    border-left-color: var(--primary);
+                }
+
+                .sidebar-nav a.active {
+                    color: var(--primary);
+                }
+
+        /* -- MAIN CONTENT -- */
+        .main-content {
+            margin-left: 260px;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+        }
+
+        /* Full width layout for auth pages */
+        body.auth-layout {
+            display: block;
+        }
+
+            body.auth-layout .sidebar,
+            body.auth-layout .topbar,
+            body.auth-layout .main-footer {
+                display: none !important;
+            }
+
+            body.auth-layout .main-content {
+                margin-left: 0 !important;
+            }
+
+            body.auth-layout .page-content {
+                padding: 0;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                min-height: 100vh;
+            }
+
+        /* -- TOP NAVBAR -- */
+        .topbar {
+            background: var(--bg-sidebar);
+            border-bottom: 1px solid var(--border-color);
+            padding: 0.75rem 1.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            transition: background-color 0.2s ease, border-color 0.2s ease;
+        }
+
+        .topbar-left {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .sidebar-toggle {
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            font-size: 1.1rem;
+            cursor: pointer;
+            padding: 0.25rem;
+            transition: color 0.2s;
+        }
+
+            .sidebar-toggle:hover {
+                color: var(--text-primary);
+            }
+
+        .topbar-title {
+            font-family: 'Roboto', sans-serif;
+            font-weight: 600;
+            font-size: 1rem;
+            color: var(--text-primary);
+        }
+
+        .topbar-right {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .topbar-btn {
+            background: var(--bg-elevated);
+            border: 1px solid var(--border-color);
+            color: var(--text-muted);
+            width: 38px;
+            height: 38px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.2s;
+            position: relative;
+            text-decoration: none;
+        }
+
+            .topbar-btn:hover {
+                background: rgba(239,35,60,0.15);
+                color: var(--primary);
+                border-color: var(--primary);
+            }
+
+        .topbar-badge {
+            position: absolute;
+            top: 4px;
+            right: 4px;
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            background: var(--primary);
+            color: white;
+            font-size: 0.6rem;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .topbar-user {
+            display: flex;
+            align-items: center;
+            gap: 0.6rem;
+            background: var(--bg-elevated);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 0.35rem 0.75rem;
+            cursor: pointer;
+            text-decoration: none;
+            transition: all 0.2s;
+        }
+
+            .topbar-user:hover {
+                background: rgba(239,35,60,0.15);
+                border-color: var(--primary);
+            }
+
+        .topbar-user-avatar {
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            background: var(--primary);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.75rem;
+            font-weight: 700;
+            color: white;
+        }
+
+        .topbar-user span {
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        /* -- PAGE CONTENT -- */
+        .page-content {
+            padding: 1.5rem;
+            flex: 1;
+        }
+
+        /* -- CARDS -- */
+        .card {
+            background: var(--bg-card) !important;
+            border: 1px solid var(--border-color) !important;
+            border-radius: 12px !important;
+            color: var(--text-secondary);
+            transition: background-color 0.2s ease, border-color 0.2s ease;
+        }
+
+        .card-header {
+            background: var(--card-header-bg) !important;
+            border-bottom: 1px solid var(--border-light) !important;
+            border-radius: 12px 12px 0 0 !important;
+            padding: 1rem 1.25rem;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+            .card-header.bg-primary {
+                background: var(--primary) !important;
+                color: white !important;
+            }
+
+            .card-header.bg-success {
+                background: #1a7a4a !important;
+                color: white !important;
+            }
+
+            .card-header.bg-info {
+                background: #0e7490 !important;
+                color: white !important;
+            }
+
+            .card-header.bg-warning {
+                background: #92400e !important;
+                color: white !important;
+            }
+
+            .card-header.bg-danger {
+                background: #7f1d1d !important;
+                color: white !important;
+            }
+
+            .card-header.bg-dark {
+                background: #111118 !important;
+                color: white !important;
+            }
+
+        /* Stat cards */
+        .stat-card {
+            background: var(--bg-card) !important;
+            border: 1px solid var(--border-color) !important;
+            border-radius: 12px;
+            padding: 1.25rem;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            transition: transform 0.2s, border-color 0.2s;
+        }
+
+            .stat-card:hover {
+                transform: translateY(-2px);
+                border-color: var(--hover-border) !important;
+            }
+
+        .stat-icon {
+            width: 52px;
+            height: 52px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.4rem;
+            flex-shrink: 0;
+        }
+
+            .stat-icon.red {
+                background: rgba(239,35,60,0.12);
+                color: var(--primary);
+            }
+
+            .stat-icon.green {
+                background: rgba(34,197,94,0.12);
+                color: #22c55e;
+            }
+
+            .stat-icon.blue {
+                background: rgba(59,130,246,0.12);
+                color: #3b82f6;
+            }
+
+            .stat-icon.yellow {
+                background: rgba(234,179,8,0.12);
+                color: #eab308;
+            }
+
+            .stat-icon.purple {
+                background: rgba(168,85,247,0.12);
+                color: #a855f7;
+            }
+
+        .stat-num {
+            font-family: 'Roboto', sans-serif;
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: var(--text-primary);
+            line-height: 1;
+        }
+
+        .stat-label {
+            font-size: 0.78rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-top: 0.2rem;
+        }
+
+        /* Tables */
+        .table {
+            color: var(--text-secondary) !important;
+        }
+
+            .table thead th {
+                background: var(--bg-elevated) !important;
+                color: var(--text-primary) !important;
+                font-size: 0.75rem;
+                text-transform: uppercase;
+                letter-spacing: 0.05em;
+                border-color: var(--border-light) !important;
+                font-weight: 600;
+            }
+
+            .table tbody tr {
+                border-color: var(--border-light) !important;
+            }
+
+                .table tbody tr:hover {
+                    background: var(--table-hover) !important;
+                }
+
+            .table td, .table th {
+                border-color: var(--border-light) !important;
+                color: var(--text-secondary);
+            }
+
+        /* Table text colors for light mode */
+        [data-theme="light"] .table td,
+        [data-theme="light"] .table th {
+            color: #2d3436 !important;
+        }
+
+            [data-theme="light"] .table td a {
+                color: #EF233C !important;
+            }
+
+        /* Forms */
+        .form-control, .form-select {
+            background: var(--bg-input) !important;
+            border: 1px solid var(--border-color) !important;
+            color: var(--text-primary) !important;
+            border-radius: 8px;
+            transition: background-color 0.2s ease, border-color 0.2s ease;
+        }
+
+            .form-control:focus, .form-select:focus {
+                border-color: var(--primary) !important;
+                box-shadow: 0 0 0 3px rgba(239,35,60,0.15) !important;
+                background: var(--bg-input) !important;
+                color: var(--text-primary) !important;
+            }
+
+            .form-control::placeholder {
+                color: var(--input-placeholder) !important;
+            }
+
+        .form-label {
+            color: var(--text-primary);
+            font-size: 0.85rem;
+            font-weight: 600;
+        }
+
+        .form-text {
+            color: var(--text-muted-light) !important;
+        }
+
+        /* Buttons */
+        .btn-primary {
+            background: var(--primary) !important;
+            border-color: var(--primary) !important;
+            color: white !important;
+        }
+
+            .btn-primary:hover {
+                background: var(--primary-dark) !important;
+                border-color: var(--primary-dark) !important;
+            }
+
+        .btn-secondary {
+            background: var(--bg-elevated) !important;
+            border-color: var(--border-color) !important;
+            color: var(--text-primary) !important;
+        }
+
+            .btn-secondary:hover {
+                background: var(--hover-bg) !important;
+                color: var(--text-primary) !important;
+            }
+
+        .btn-outline-primary {
+            color: var(--primary) !important;
+            border-color: var(--primary) !important;
+        }
+
+            .btn-outline-primary:hover {
+                background: var(--primary) !important;
+                color: white !important;
+            }
+
+        .btn-outline-secondary {
+            color: var(--text-secondary) !important;
+            border-color: var(--border-color) !important;
+        }
+
+            .btn-outline-secondary:hover {
+                background: var(--hover-bg) !important;
+                color: var(--text-primary) !important;
+            }
+
+        .btn-success {
+            background: #166534 !important;
+            border-color: #166534 !important;
+            color: white !important;
+        }
+
+            .btn-success:hover {
+                background: #14532d !important;
+            }
+
+        .btn-danger {
+            background: #7f1d1d !important;
+            border-color: #7f1d1d !important;
+            color: white !important;
+        }
+
+            .btn-danger:hover {
+                background: #6b1a1a !important;
+            }
+
+        .btn-info {
+            background: #0e7490 !important;
+            border-color: #0e7490 !important;
+            color: white !important;
+        }
+
+        .btn-warning {
+            background: #78350f !important;
+            border-color: #78350f !important;
+            color: #fbbf24 !important;
+        }
+
+        .btn-outline-danger {
+            color: #f87171 !important;
+            border-color: #f87171 !important;
+        }
+
+            .btn-outline-danger:hover {
+                background: rgba(248,113,113,0.15) !important;
+                color: #f87171 !important;
+            }
+
+        /* Modals */
+        .modal-content {
+            background: var(--modal-bg) !important;
+            border: 1px solid var(--modal-border) !important;
+            border-radius: 16px;
+        }
+
+        .modal-header {
+            border-bottom: 1px solid var(--border-light) !important;
+        }
+
+        .modal-footer {
+            border-top: 1px solid var(--border-light) !important;
+        }
+
+        .modal-title {
+            color: var(--text-primary);
+        }
+
+        .btn-close {
+            filter: var(--btn-close-filter, invert(0));
+        }
+
+        [data-theme="dark"] .btn-close {
+            --btn-close-filter: invert(1);
+        }
+
+        /* Alerts */
+        .alert {
+            color: var(--alert-text) !important;
+        }
+
+        .alert-success {
+            background: rgba(34,197,94,0.1) !important;
+            border-color: rgba(34,197,94,0.2) !important;
+            color: var(--alert-text) !important;
+        }
+
+        [data-theme="light"] .alert-success {
+            color: #155724 !important;
+            background: #d4edda !important;
+        }
+
+        .alert-danger {
+            background: rgba(239,35,60,0.1) !important;
+            border-color: rgba(239,35,60,0.2) !important;
+            color: var(--alert-text) !important;
+        }
+
+        [data-theme="light"] .alert-danger {
+            color: #721c24 !important;
+            background: #f8d7da !important;
+        }
+
+        .alert-warning {
+            background: rgba(234,179,8,0.1) !important;
+            border-color: rgba(234,179,8,0.2) !important;
+            color: var(--alert-text) !important;
+        }
+
+        [data-theme="light"] .alert-warning {
+            color: #856404 !important;
+            background: #fff3cd !important;
+        }
+
+        .alert-info {
+            background: rgba(59,130,246,0.1) !important;
+            border-color: rgba(59,130,246,0.2) !important;
+            color: var(--alert-text) !important;
+        }
+
+        [data-theme="light"] .alert-info {
+            color: #0c5460 !important;
+            background: #d1ecf1 !important;
+        }
+
+        /* Badges */
+        .badge {
+            font-weight: 500;
+        }
+
+            .badge.bg-success {
+                background: rgba(34,197,94,0.2) !important;
+                color: #4ade80 !important;
+                border: 1px solid rgba(34,197,94,0.3);
+            }
+
+        [data-theme="light"] .badge.bg-success {
+            background: #d4edda !important;
+            color: #155724 !important;
+            border-color: #c3e6cb !important;
+        }
+
+        .badge.bg-danger {
+            background: rgba(239,35,60,0.2) !important;
+            color: #f87171 !important;
+            border: 1px solid rgba(239,35,60,0.3);
+        }
+
+        [data-theme="light"] .badge.bg-danger {
+            background: #f8d7da !important;
+            color: #721c24 !important;
+            border-color: #f5c6cb !important;
+        }
+
+        .badge.bg-warning {
+            background: rgba(234,179,8,0.2) !important;
+            color: #fbbf24 !important;
+            border: 1px solid rgba(234,179,8,0.3);
+        }
+
+        [data-theme="light"] .badge.bg-warning {
+            background: #fff3cd !important;
+            color: #856404 !important;
+            border-color: #ffeeba !important;
+        }
+
+        .badge.bg-info {
+            background: rgba(59,130,246,0.2) !important;
+            color: #60a5fa !important;
+            border: 1px solid rgba(59,130,246,0.3);
+        }
+
+        [data-theme="light"] .badge.bg-info {
+            background: #d1ecf1 !important;
+            color: #0c5460 !important;
+            border-color: #bee5eb !important;
+        }
+
+        .badge.bg-primary {
+            background: rgba(239,35,60,0.2) !important;
+            color: var(--primary) !important;
+            border: 1px solid rgba(239,35,60,0.3);
+        }
+
+        [data-theme="light"] .badge.bg-primary {
+            color: #EF233C !important;
+        }
+
+        .badge.bg-secondary {
+            background: var(--bg-elevated) !important;
+            color: var(--text-muted) !important;
+            border: 1px solid var(--border-color);
+        }
+
+        [data-theme="light"] .badge.bg-secondary {
+            background: #e9ecef !important;
+            color: #495057 !important;
+        }
+
+        .badge.bg-light {
+            background: var(--badge-light-bg) !important;
+            color: var(--badge-light-text) !important;
+        }
+
+        /* Progress bars */
+        .progress {
+            background: var(--progress-bg) !important;
+        }
+
+        /* DataTables dark/light theme */
+        .dataTables_wrapper .dataTables_length select,
+        .dataTables_wrapper .dataTables_filter input {
+            background: var(--bg-input) !important;
+            border-color: var(--border-color) !important;
+            color: var(--text-primary) !important;
+        }
+
+        .dataTables_wrapper .dataTables_info,
+        .dataTables_wrapper .dataTables_length label,
+        .dataTables_wrapper .dataTables_filter label {
+            color: var(--text-muted) !important;
+        }
+
+        .dataTables_wrapper .dataTables_paginate .paginate_button {
+            color: var(--text-secondary) !important;
+            border-radius: 6px !important;
+        }
+
+            .dataTables_wrapper .dataTables_paginate .paginate_button.current,
+            .dataTables_wrapper .dataTables_paginate .paginate_button:hover {
+                background: var(--primary) !important;
+                border-color: var(--primary) !important;
+                color: white !important;
+            }
+
+        /* Page header */
+        .page-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 1.5rem;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+
+            .page-header h1 {
+                font-family: 'Roboto', sans-serif;
+                font-size: 1.4rem;
+                font-weight: 700;
+                color: var(--text-primary);
+                margin: 0;
+            }
+
+            .page-header .breadcrumb-text {
+                font-size: 0.8rem;
+                color: var(--text-muted);
+                margin-top: 0.2rem;
+            }
+
+        /* Action cards (dashboard quick actions) */
+        .action-card {
+            background: var(--bg-elevated) !important;
+            border: 1px solid var(--border-color) !important;
+            border-radius: 12px;
+            padding: 1.5rem;
+            text-align: center;
+            text-decoration: none;
+            color: var(--text-secondary);
+            display: block;
+            transition: all 0.2s;
+        }
+
+            .action-card:hover {
+                border-color: var(--hover-border) !important;
+                background: rgba(239,35,60,0.05) !important;
+                transform: translateY(-3px);
+                color: var(--text-primary);
+            }
+
+        .action-card-icon {
+            width: 56px;
+            height: 56px;
+            border-radius: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            margin: 0 auto 1rem;
+        }
+
+        .action-card h6 {
+            font-weight: 700;
+            color: var(--text-primary);
+            margin-bottom: 0.3rem;
+        }
+
+        .action-card p {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            margin: 0;
+        }
+
+        /* Footer */
+        .main-footer {
+            background: var(--bg-sidebar);
+            border-top: 1px solid var(--border-color);
+            padding: 1rem 1.5rem;
+            font-size: 0.82rem;
+            color: var(--text-muted);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        /* Responsive */
+        @@media (max-width: 992px) {
+            .sidebar {
+                transform: translateX(-100%);
+            }
+
+                .sidebar.open {
+                    transform: translateX(0);
+                }
+
+            .main-content {
+                margin-left: 0;
+            }
+        }
+
+        /* List group dark */
+        .list-group-item {
+            background: var(--bg-card) !important;
+            border-color: var(--border-light) !important;
+            color: var(--text-secondary) !important;
+        }
+
+        /* Input group */
+        .input-group-text {
+            background: var(--bg-elevated) !important;
+            border-color: var(--border-color) !important;
+            color: var(--text-muted) !important;
+        }
+
+        /* Select2 / chosen override */
+        .text-muted {
+            color: var(--text-muted) !important;
+        }
+
+        .text-gray-800 {
+            color: var(--text-primary) !important;
+        }
+
+        .bg-light {
+            background: var(--bg-elevated) !important;
+        }
+
+        .border-bottom {
+            border-color: var(--border-light) !important;
+        }
+
+        /* Scrollbar */
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: var(--bg-body);
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--border-color);
+            border-radius: 3px;
+        }
+
+            ::-webkit-scrollbar-thumb:hover {
+                background: rgba(239,35,60,0.4);
+            }
+
+        /* Enhanced text color fixes for light mode - ensures no dark panels appear */
+        [data-theme="light"] p,
+        [data-theme="light"] li,
+        [data-theme="light"] span:not(.badge):not(.btn):not(.sidebar-avatar-dot),
+        [data-theme="light"] div:not(.stat-card):not(.alert):not(.modal-content),
+        [data-theme="light"] .breadcrumb-text,
+        [data-theme="light"] .form-text,
+        [data-theme="light"] .sidebar-user-name,
+        [data-theme="light"] .topbar-title,
+        [data-theme="light"] .list-group-item,
+        [data-theme="light"] .list-group-item span,
+        [data-theme="light"] .dataTables_info,
+        [data-theme="light"] .dataTables_length label,
+        [data-theme="light"] .dataTables_filter label {
+            color: #2d3436 !important;
+        }
+
+        [data-theme="light"] .text-muted,
+        [data-theme="light"] .sidebar-user-role,
+        [data-theme="light"] .nav-label {
+            color: #6c757d !important;
+        }
+
+        [data-theme="light"] .card-header {
+            color: #1a1a2e !important;
+        }
+
+        [data-theme="light"] .modal-body,
+        [data-theme="light"] .modal-body p,
+        [data-theme="light"] .modal-body span {
+            color: #2d3436 !important;
+        }
+
+        /* Ensure sidebar panels in light mode have proper white background */
+        [data-theme="light"] .sidebar {
+            background: #ffffff !important;
+        }
+
+        [data-theme="light"] .topbar {
+            background: #ffffff !important;
+        }
+
+        [data-theme="light"] .main-footer {
+            background: #ffffff !important;
+        }
+
+        [data-theme="light"] .card {
+            background: #ffffff !important;
+        }
+
+        [data-theme="light"] .modal-content {
+            background: #ffffff !important;
+        }
+    </style>
+
+    @RenderSection("Styles", required: false)
+</head>
+
+@{
+    // Check if we're on an auth page (login/register)
+    var controller = ViewContext.RouteData.Values["controller"]?.ToString();
+    var action = ViewContext.RouteData.Values["action"]?.ToString();
+    var isAuthPage = (controller == "Auth" && (action == "StudentLogin" || action == "StaffLogin" || action == "Register"))
+     || (controller == "Technician" && (action == "TechLogin"));
+    // Also check for Home controller Index or any other page where you want full width without sidebar
+    var isFullWidthPage = isAuthPage || (controller == "Home" && action == "Index");
+}
+
+<body class="@(isFullWidthPage ? "auth-layout" : "")">
+    @if (!isFullWidthPage)
+    {
+        <!-- Sidebar -->
+        <div class="sidebar" id="sidebar">
+            <a href="@Url.Action("Index", "Home")" class="sidebar-brand">
+                <img src="https://d1yjjnpx0p53s8.cloudfront.net/styles/logo-original-577x577/s3/012013/dut_logo.png?itok=MTllcK0k" alt="DUT" />
+                <span>Dut Housing</span>
+            </a>
+
+            <div class="sidebar-user">
+                <div class="sidebar-avatar">
+                    @{ var initials = (Session["StaffName"] ?? Session["StudentName"] ?? "U"); }
+                    @initials.ToString().Substring(0, 1).ToUpper()
+                    <div class="sidebar-avatar-dot"></div>
+                </div>
+                <div>
+                    <div class="sidebar-user-name">@(Session["StaffName"] ?? Session["StudentName"] ?? "User")</div>
+                    <div class="sidebar-user-role">@(Session["UserType"] ?? "Guest")</div>
+                </div>
+            </div>
+
+            <div class="sidebar-nav">
+                @if (Session["StaffID"] != null)
+                {
+                    var role = Session["UserType"] as string;
+                    <div class="nav-label">Main</div>
+
+                    <!-- Show different dashboard based on role -->
+                    if (role == "Security")
+                    {
+                        <a href="@Url.Action("Dashboard", "Visitor")" class="@(ViewBag.Title != null && ViewBag.Title.ToString().Contains("Visitor Dashboard") ? "active" : "")">
+                            <i class="fas fa-shield-alt"></i> Security Dashboard
+                        </a>
+                    }
+                    else if (role == "Building Manager" || role == "Admin")
+                    {
+                        <a href="@Url.Action("Dashboard", "Staff")" class="@(ViewBag.Title != null && ViewBag.Title.ToString().Contains("Dashboard") ? "active" : "")">
+                            <i class="fas fa-tachometer-alt"></i> Dashboard
+                        </a>
+                    }
+
+                    if (role == "Admin")
+                    {
+                        <div class="nav-label">Administration</div>
+                        <a href="@Url.Action("ManageResidences", "Staff")">
+                            <i class="fas fa-building"></i> Residences
+                        </a>
+                        <a href="@Url.Action("StudentAllocation", "Staff")">
+                            <i class="fas fa-user-graduate"></i> Student Allocation
+                        </a>
+                        <a href="@Url.Action("ResidenceChangeRequests", "Staff")">
+                            <i class="fas fa-exchange-alt"></i> Residence Change Requests
+                        </a>
+                        <a href="@Url.Action("ViewUserDetails", "Staff")">
+                            <i class="fas fa-users-cog"></i> Manage Users
+                        </a>
+                        <a href="@Url.Action("SendAnnouncement", "Staff")">
+                            <i class="fas fa-bullhorn"></i> Send Announcement
+                        </a>
+                        <a href="@Url.Action("ViewAnnouncements", "Staff")">
+                            <i class="fas fa-envelope-open"></i> Announcements
+                        </a>
+                        <a href="@Url.Action("Semester2Operations", "Staff")"
+                           class="@(ViewBag.Title != null && ViewBag.Title.ToString().Contains("Semester 2 Operations") ? "active" : "")">
+                            <i class="fas fa-project-diagram"></i> Semester 2 Operations
+                        </a>
+                        <a href="@Url.Action("Index", "Election")">
+                            <i class="fas fa-vote-yea"></i> Elections
+                        </a>
+                    }
+                    else if (role == "Building Manager")
+                    {
+                        <div class="nav-label">Residence Management</div>
+                        <a href="@Url.Action("RoomManagement", "Staff")">
+                            <i class="fas fa-door-open"></i> Manage Rooms
+                        </a>
+                        <a href="@Url.Action("RoomAllocation", "Staff")">
+                            <i class="fas fa-bed"></i> Room Allocation
+                        </a>
+                        <a href="@Url.Action("RoomChangeRequests", "Staff")">
+                            <i class="fas fa-exchange-alt"></i> Room Change Requests
+                        </a>
+                        <a href="@Url.Action("ComplaintManagement", "Staff")">
+                            <i class="fas fa-bullhorn"></i> Manage Complaints
+                        </a>
+                        <a href="@Url.Action("Reports", "Staff")">
+                            <i class="fas fa-tools"></i> Maintenance Reports
+                        </a>
+                        <a href="@Url.Action("Register", "Technician")">
+                            <i class="fas fa-user-cog"></i> Add Technician
+                        </a>
+                        <a href="@Url.Action("SendAnnouncement", "Staff")">
+                            <i class="fas fa-bullhorn"></i> Send Announcement
+                        </a>
+                        <a href="@Url.Action("CheckInManagement", "Staff")"
+                           class="@(ViewBag.Title != null && ViewBag.Title.ToString().Contains("Check-In Management") ? "active" : "")">
+                            <i class="fas fa-qrcode"></i> Check-In Management
+                        </a>
+                        <a href="@Url.Action("CheckInLog", "Staff")"
+                           class="@(ViewBag.Title != null && ViewBag.Title.ToString().Contains("Check-In Log") ? "active" : "")">
+                            <i class="fas fa-list-alt"></i> Check-In Log
+                        </a>
+                        <a href="@Url.Action("ViewAnnouncements", "Staff")">
+                            <i class="fas fa-envelope-open"></i> Announcements
+                        </a>
+                        <a href="@Url.Action("Semester2Operations", "Staff")"
+                           class="@(ViewBag.Title != null && ViewBag.Title.ToString().Contains("Semester 2 Operations") ? "active" : "")">
+                            <i class="fas fa-project-diagram"></i> Semester 2 Operations
+                        </a>
+                        <a href="@Url.Action("Index", "Election")">
+                            <i class="fas fa-vote-yea"></i> Residence Elections
+                        </a>
+                    }
+                    else if (role == "Security")
+                    {
+                        <div class="nav-label">Security Management</div>
+                        <a href="@Url.Action("Semester2Operations", "Staff")"
+                           class="@(ViewBag.Title != null && ViewBag.Title.ToString().Contains("Semester 2 Operations") ? "active" : "")">
+                            <i class="fas fa-project-diagram"></i> Semester 2 Operations
+                        </a>
+                        <a href="@Url.Action("ActiveVisitors", "Visitor")">
+                            <i class="fas fa-users"></i> Active Visitors
+                        </a>
+                        <a href="@Url.Action("CheckIn", "Visitor")">
+                            <i class="fas fa-id-card"></i> Scan Visitor
+                        </a>
+                        <a href="@Url.Action("VisitorHistory", "Visitor")">
+                            <i class="fas fa-history"></i> Visitor History
+                        </a>
+                        <a href="@Url.Action("ViewAnnouncements", "Staff")">
+                            <i class="fas fa-envelope-open"></i> Announcements
+                        </a>
+                    }
+                }
+                else if (Session["StudentID"] != null)
+                {
+                    <div class="nav-label">My Residence</div>
+                    <a href="@Url.Action("Dashboard", "Student")">
+                        <i class="fas fa-tachometer-alt"></i> Dashboard
+                    </a>
+                    <a href="@Url.Action("Maintenance", "Student")">
+                        <i class="fas fa-tools"></i> Maintenance
+                    </a>
+                    <a href="@Url.Action("Announcements", "Student")">
+                        <i class="fas fa-bullhorn"></i> Announcements
+                    </a>
+                    <a href="@Url.Action("Notifications", "Student")">
+                        <i class="fas fa-bell"></i> Notifications
+                    </a>
+                    <a href="@Url.Action("Index", "Election")">
+                        <i class="fas fa-vote-yea"></i> Residence Elections
+                    </a>
+                    <a href="@Url.Action("Complaints", "Student")">
+                        <i class="fas fa-bullhorn"></i> Complaints
+                    </a>
+                    <a href="@Url.Action("ConductHistory", "Student")">
+                        <i class="fas fa-clipboard-list"></i> Conduct History
+                    </a>
+                    <a href="@Url.Action("MyRoomChangeRequests", "Student")">
+                        <i class="fas fa-exchange-alt"></i> Room Change
+                    </a>
+                    <a href="@Url.Action("MyResidenceChangeRequests", "Student")">
+                        <i class="fas fa-exchange-alt"></i> Residence Change
+                    </a>
+                    <a href="@Url.Action("MyCheckInStatus", "Student")"
+                       class="@(ViewBag.Title != null && ViewBag.Title.ToString().Contains("Check-In") ? "active" : "")">
+                        <i class="fas fa-qrcode"></i> My Check-In
+                    </a>
+                    @*<a href="@Url.Action("MyInvoices", "Student")">
+                            <i class="fas fa-file-invoice-dollar"></i> My Invoices
+                        </a>*@
+                    <a href="@Url.Action("Profile", "Student")">
+                        <i class="fas fa-user-circle"></i> My Profile
+                    </a>
+                }
+
+                <div class="nav-label" style="margin-top:1rem;">Account</div>
+                @if (Session["StaffID"] != null)
+                {
+                    <a href="@Url.Action("Logout", "Staff")" style="color:#f87171;">
+                        <i class="fas fa-sign-out-alt"></i> Logout
+                    </a>
+                }
+                else if (Session["StudentID"] != null)
+                {
+                    <a href="@Url.Action("Logout", "Student")" style="color:#f87171;">
+                        <i class="fas fa-sign-out-alt"></i> Logout
+                    </a>
+                }
+                else
+                {
+                    <a href="@Url.Action("StudentLogin", "Auth")">
+                        <i class="fas fa-sign-in-alt"></i> Login
+                    </a>
+                }
+            </div>
+        </div>
+
+        <!-- Main Content with Sidebar -->
+        <div class="main-content">
+            <!-- Topbar -->
+            <div class="topbar">
+                <div class="topbar-left">
+                    <button class="sidebar-toggle" onclick="toggleSidebar()">
+                        <i class="fas fa-bars"></i>
+                    </button>
+                    <span class="topbar-title">@ViewBag.Title</span>
+                </div>
+                <div class="topbar-right">
+                    <a href="@Url.Action("Index", "Home")" class="topbar-btn" title="Home">
+                        <i class="fas fa-home"></i>
+                    </a>
+
+                    <!-- Theme Toggle Button -->
+                    <button class="theme-toggle" id="themeToggle" title="Switch theme">
+                        <i class="fas fa-sun"></i>
+                        <i class="fas fa-moon"></i>
+                    </button>
+
+                    @if (Session["StaffID"] != null)
+                    {
+                        <div class="topbar-user">
+                            <div class="topbar-user-avatar">
+                                @(Session["StaffName"]?.ToString().Substring(0,1).ToUpper() ?? "S")
+                            </div>
+                            <span class="d-none d-md-inline">@Session["StaffName"]</span>
+                        </div>
+                    }
+                    else if (Session["StudentID"] != null)
+                    {
+                        <a href="@Url.Action("Profile", "Student")" class="topbar-user">
+                            <div class="topbar-user-avatar">
+                                @(Session["StudentName"]?.ToString().Substring(0,1).ToUpper() ?? "S")
+                            </div>
+                            <span class="d-none d-md-inline">@Session["StudentName"]</span>
+                        </a>
+                    }
+                </div>
+            </div>
+
+            <!-- Page Content -->
+            <div class="page-content">
+                @RenderBody()
+            </div>
+
+            <!-- Footer -->
+            <div class="main-footer">
+                <span>&copy; @DateTime.Now.Year Durban University of Technology</span>
+                <span>DUT Residence Management System</span>
+            </div>
+        </div>
+
+        <!-- Overlay for mobile -->
+        <div id="sidebar-overlay" onclick="toggleSidebar()" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.5); z-index:999;"></div>
+    }
+    else
+    {
+        <!-- Full width layout without sidebar/topbar/footer -->
+        <div class="main-content" style="margin-left:0 !important;">
+            <div class="page-content" style="padding:0; display:flex; align-items:center; justify-content:center; min-height:100vh;">
+                @RenderBody()
+            </div>
+        </div>
+    }
+
+    <!-- jQuery -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <!-- Bootstrap -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- DataTables -->
+    <script src="https://cdn.datatables.net/1.13.4/js/jquery.dataTables.min.js"></script>
+    <script src="https://cdn.datatables.net/1.13.4/js/dataTables.bootstrap5.min.js"></script>
+
+    <script>
+        function toggleSidebar() {
+            var sidebar = document.getElementById('sidebar');
+            var overlay = document.getElementById('sidebar-overlay');
+            if (sidebar) {
+                sidebar.classList.toggle('open');
+                if (overlay) overlay.style.display = sidebar.classList.contains('open') ? 'block' : 'none';
+            }
+        }
+        // Mark active nav link
+        document.querySelectorAll('.sidebar-nav a').forEach(function (link) {
+            if (link.href === window.location.href) link.classList.add('active');
+        });
+
+        // Theme Toggle Functionality with smooth transition and no glitch
+        (function () {
+            // Ensure theme is applied from localStorage (redundant but safe)
+            const savedTheme = localStorage.getItem('dut_theme') || 'dark';
+            // Apply to both html and body to ensure consistency
+            document.documentElement.setAttribute('data-theme', savedTheme);
+            if (document.body) {
+                document.body.setAttribute('data-theme', savedTheme);
+            }
+
+            // Function to update any theme-dependent elements
+            function updateDataTablesTheme() {
+                if ($.fn.DataTable) {
+                    $('table.dataTable').each(function () {
+                        if ($.fn.DataTable.isDataTable(this)) {
+                            $(this).DataTable().draw();
+                        }
+                    });
+                }
+            }
+
+            // Theme toggle button handler with smooth transition class
+            const themeToggle = document.getElementById('themeToggle');
+            if (themeToggle) {
+                themeToggle.addEventListener('click', function () {
+                    const currentTheme = document.documentElement.getAttribute('data-theme');
+                    const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+
+                    // Apply theme to both html and body for consistency
+                    document.documentElement.setAttribute('data-theme', newTheme);
+                    if (document.body) {
+                        document.body.setAttribute('data-theme', newTheme);
+                    }
+                    localStorage.setItem('dut_theme', newTheme);
+
+                    // Small delay to ensure CSS transitions are smooth
+                    setTimeout(() => {
+                        updateDataTablesTheme();
+                    }, 50);
+                });
+            }
+        })();
+    </script>
+
+    @RenderSection("Scripts", required: false)
+</body>
+</html>

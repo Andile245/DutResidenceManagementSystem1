@@ -1,0 +1,16 @@
+# Visual Studio and build output
+.vs/
+bin/
+obj/
+
+# NuGet restore output
+packages/
+
+# Local runtime data and user-uploaded content
+App_Data/*.mdf
+App_Data/*.ldf
+Uploads/
+
+# Per-user settings
+*.user
+*.suo

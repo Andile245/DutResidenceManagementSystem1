@@ -1,0 +1,520 @@
+﻿@model DUTResManagementSystem.ViewModels.LoginViewModel
+
+@{
+    ViewBag.Title = "Staff Login";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<div class="auth-wrapper">
+    <div class="auth-container">
+        <div class="auth-card">
+            <div class="auth-logo">
+                <div class="auth-logo-icon">
+                    <i class="fas fa-user-tie"></i>
+                </div>
+                <h2>Staff Login</h2>
+                <p>Access your staff dashboard</p>
+            </div>
+
+            @Html.ValidationSummary(true, "", new { @class = "alert alert-danger" })
+
+            @using (Html.BeginForm("StaffLogin", "Auth", FormMethod.Post))
+            {
+                @Html.AntiForgeryToken()
+
+                <div class="form-group">
+                    <label class="form-label">
+                        <i class="fas fa-envelope me-2" style="color:var(--primary);font-size:0.75rem"></i>Email Address
+                    </label>
+                    @Html.TextBoxFor(m => m.Email, new
+                    {
+                        @class = "form-control",
+                        placeholder = "Enter your email address",
+                        type = "email"
+                    })
+                    @Html.ValidationMessageFor(m => m.Email, "", new { @class = "text-danger small" })
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">
+                        <i class="fas fa-lock me-2" style="color:var(--primary);font-size:0.75rem"></i>Password
+                    </label>
+                    <div class="input-group">
+                        @Html.PasswordFor(m => m.Password, new
+                        {
+                            @class = "form-control",
+                            placeholder = "Enter your password",
+                            id = "passwordField"
+                        })
+                        <button type="button" class="btn btn-outline-secondary password-toggle" id="togglePassword">
+                            <i class="fas fa-eye"></i>
+                        </button>
+                    </div>
+                    @Html.ValidationMessageFor(m => m.Password, "", new { @class = "text-danger small" })
+                </div>
+
+                <button type="submit" class="btn btn-primary w-100">
+                    <i class="fas fa-sign-in-alt me-2"></i>Login
+                </button>
+
+                <div class="auth-divider">
+                    <span>or</span>
+                </div>
+
+                <div class="auth-links">
+                    <p>
+                        <i class="fas fa-user-graduate me-2"></i>Student?
+                        @Html.ActionLink("Student Login", "StudentLogin", "Auth", null, new { @class = "auth-link" })
+                    </p>
+                    <p class="mb-0">
+                        <i class="fas fa-user-plus me-2"></i>Don't have an account?
+                        @Html.ActionLink("Register here", "Register", "Auth", null, new { @class = "auth-link" })
+                    </p>
+                </div>
+
+                <div class="text-center mt-4">
+                    <a href="@Url.Action("Index", "Home")" class="btn btn-outline-secondary btn-sm">
+                        <i class="fas fa-arrow-left me-1"></i>Back to Home
+                    </a>
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+<style>
+    :root {
+        --primary: #3B82F6;
+        --primary-dark: #2563EB;
+        --primary-light: rgba(59,130,246,0.1);
+        --primary-gradient: linear-gradient(135deg, #3B82F6 0%, #2563EB 100%);
+    }
+
+    .auth-wrapper {
+        width: 100%;
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: linear-gradient(135deg, #f5f7fb 0%, #e9ecef 100%);
+        padding: 2rem;
+        transition: background 0.3s ease;
+    }
+
+    /* Dark mode gradient */
+    [data-theme="dark"] .auth-wrapper {
+        background: linear-gradient(135deg, #1C1C27 0%, #0f0f12 100%);
+    }
+
+    .auth-container {
+        width: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .auth-card {
+        max-width: 500px;
+        width: 100%;
+        background: #ffffff;
+        border: 1px solid #e9ecef;
+        border-radius: 24px;
+        padding: 2.5rem;
+        box-shadow: 0 25px 50px -12px rgba(0,0,0,0.1);
+        transition: transform 0.3s ease, background 0.3s ease, border-color 0.3s ease;
+    }
+
+    /* Dark mode card */
+    [data-theme="dark"] .auth-card {
+        background: #23232F;
+        border: 1px solid rgba(255,255,255,0.08);
+        box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5);
+    }
+
+    .auth-card:hover {
+        transform: translateY(-5px);
+    }
+
+    .auth-logo {
+        text-align: center;
+        margin-bottom: 2rem;
+    }
+
+    .auth-logo-icon {
+        width: 80px;
+        height: 80px;
+        background: rgba(59,130,246,0.1);
+        border-radius: 24px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto 1rem auto;
+        transition: background 0.3s ease;
+    }
+
+    /* Dark mode icon background */
+    [data-theme="dark"] .auth-logo-icon {
+        background: rgba(59,130,246,0.12);
+    }
+
+    .auth-logo-icon i {
+        font-size: 2.5rem;
+        color: var(--primary);
+    }
+
+    .auth-logo h2 {
+        font-size: 1.75rem;
+        font-weight: 700;
+        color: #1a1a2e;
+        margin-bottom: 0.5rem;
+        transition: color 0.3s ease;
+    }
+
+    /* Dark mode heading */
+    [data-theme="dark"] .auth-logo h2 {
+        color: #E8E8F0;
+    }
+
+    .auth-logo p {
+        font-size: 0.9rem;
+        color: #6c757d;
+        margin: 0;
+        transition: color 0.3s ease;
+    }
+
+    /* Dark mode subtitle */
+    [data-theme="dark"] .auth-logo p {
+        color: #9B9BB0;
+    }
+
+    .form-group {
+        margin-bottom: 1.5rem;
+    }
+
+    .form-label {
+        display: block;
+        margin-bottom: 0.5rem;
+        font-size: 0.85rem;
+        font-weight: 600;
+        color: #495057;
+        transition: color 0.3s ease;
+    }
+
+    /* Dark mode label */
+    [data-theme="dark"] .form-label {
+        color: #A0A0B5;
+    }
+
+    .form-control {
+        width: 100%;
+        padding: 0.85rem 1rem;
+        background: #ffffff;
+        border: 1px solid #dee2e6;
+        border-radius: 12px;
+        color: #1a1a2e;
+        font-size: 1rem;
+        transition: all 0.2s ease;
+    }
+
+    /* Dark mode input */
+    [data-theme="dark"] .form-control {
+        background: #2D2D3A;
+        border: 1px solid rgba(255,255,255,0.1);
+        color: #E8E8F0;
+    }
+
+    .form-control:focus {
+        outline: none;
+        border-color: var(--primary);
+        box-shadow: 0 0 0 3px rgba(59,130,246,0.15);
+    }
+
+    .form-control::placeholder {
+        color: #adb5bd;
+        transition: color 0.3s ease;
+    }
+
+    /* Dark mode placeholder */
+    [data-theme="dark"] .form-control::placeholder {
+        color: #6B6B80;
+    }
+
+    .input-group {
+        display: flex;
+        align-items: center;
+    }
+
+    .input-group .form-control {
+        border-radius: 12px 0 0 12px;
+        border-right: none;
+    }
+
+    .input-group .form-control:focus {
+        border-right: none;
+    }
+
+    .password-toggle {
+        border-radius: 0 12px 12px 0;
+        background: #ffffff;
+        border: 1px solid #dee2e6;
+        border-left: none;
+        color: #6c757d;
+        padding: 0.85rem 1rem;
+        cursor: pointer;
+        transition: all 0.2s ease;
+    }
+
+    /* Dark mode password toggle */
+    [data-theme="dark"] .password-toggle {
+        background: #2D2D3A;
+        border: 1px solid rgba(255,255,255,0.1);
+        border-left: none;
+        color: #A0A0B5;
+    }
+
+    .password-toggle:hover {
+        background: rgba(59,130,246,0.1);
+        color: var(--primary);
+    }
+
+    [data-theme="dark"] .password-toggle:hover {
+        background: rgba(59,130,246,0.1);
+        color: var(--primary);
+    }
+
+    .btn-primary {
+        padding: 0.85rem;
+        font-size: 1rem;
+        font-weight: 600;
+        border-radius: 12px;
+        margin-top: 0.5rem;
+        transition: all 0.2s ease;
+        background: var(--primary);
+        border-color: var(--primary);
+        color: white;
+    }
+
+    .btn-primary:hover {
+        background: var(--primary-dark);
+        border-color: var(--primary-dark);
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(59,130,246,0.3);
+    }
+
+    .auth-divider {
+        text-align: center;
+        margin: 1.5rem 0;
+        position: relative;
+    }
+
+    .auth-divider::before {
+        content: '';
+        position: absolute;
+        left: 0;
+        top: 50%;
+        width: 45%;
+        height: 1px;
+        background: #dee2e6;
+        transition: background 0.3s ease;
+    }
+
+    /* Dark mode divider */
+    [data-theme="dark"] .auth-divider::before {
+        background: rgba(255,255,255,0.08);
+    }
+
+    .auth-divider::after {
+        content: '';
+        position: absolute;
+        right: 0;
+        top: 50%;
+        width: 45%;
+        height: 1px;
+        background: #dee2e6;
+        transition: background 0.3s ease;
+    }
+
+    /* Dark mode divider */
+    [data-theme="dark"] .auth-divider::after {
+        background: rgba(255,255,255,0.08);
+    }
+
+    .auth-divider span {
+        background: #ffffff;
+        padding: 0 1rem;
+        color: #6c757d;
+        font-size: 0.85rem;
+        position: relative;
+        z-index: 1;
+        transition: background 0.3s ease, color 0.3s ease;
+    }
+
+    /* Dark mode divider span */
+    [data-theme="dark"] .auth-divider span {
+        background: #23232F;
+        color: #6B6B80;
+    }
+
+    .auth-links {
+        text-align: center;
+        margin: 1rem 0;
+    }
+
+    .auth-links p {
+        color: #6c757d;
+        font-size: 0.9rem;
+        margin-bottom: 0.75rem;
+        transition: color 0.3s ease;
+    }
+
+    /* Dark mode links text */
+    [data-theme="dark"] .auth-links p {
+        color: #A0A0B5;
+    }
+
+    .auth-links i {
+        width: 20px;
+        color: #6c757d;
+        transition: color 0.3s ease;
+    }
+
+    /* Dark mode icons */
+    [data-theme="dark"] .auth-links i {
+        color: #9B9BB0;
+    }
+
+    .auth-link {
+        color: var(--primary);
+        text-decoration: none;
+        font-weight: 600;
+        transition: color 0.2s ease;
+    }
+
+    .auth-link:hover {
+        color: var(--primary-dark);
+        text-decoration: underline;
+    }
+
+    .btn-outline-secondary {
+        background: transparent;
+        border: 1px solid #dee2e6;
+        color: #6c757d;
+        padding: 0.5rem 1rem;
+        border-radius: 8px;
+        font-size: 0.85rem;
+        transition: all 0.2s ease;
+    }
+
+    /* Dark mode secondary button */
+    [data-theme="dark"] .btn-outline-secondary {
+        border: 1px solid rgba(255,255,255,0.15);
+        color: #A0A0B5;
+    }
+
+    .btn-outline-secondary:hover {
+        background: rgba(0,0,0,0.05);
+        color: #1a1a2e;
+        transform: translateY(-1px);
+    }
+
+    /* Dark mode secondary button hover */
+    [data-theme="dark"] .btn-outline-secondary:hover {
+        background: rgba(255,255,255,0.05);
+        color: #E8E8F0;
+    }
+
+    .alert {
+        border-radius: 12px;
+        margin-bottom: 1.5rem;
+        padding: 0.75rem 1rem;
+    }
+
+    /* Dark mode alert text fix */
+    [data-theme="dark"] .alert-danger {
+        background: rgba(239,35,60,0.1) !important;
+        border-color: rgba(239,35,60,0.2) !important;
+        color: #f87171 !important;
+    }
+
+    [data-theme="light"] .alert-danger {
+        background: #f8d7da !important;
+        border-color: #f5c6cb !important;
+        color: #721c24 !important;
+    }
+
+    @@media (min-width: 1400px) {
+        .auth-card {
+            max-width: 550px;
+            padding: 3rem;
+        }
+
+        .auth-logo-icon {
+            width: 100px;
+            height: 100px;
+        }
+
+        .auth-logo-icon i {
+            font-size: 3rem;
+        }
+
+        .auth-logo h2 {
+            font-size: 2rem;
+        }
+
+        .form-control, .password-toggle {
+            padding: 1rem 1.25rem;
+        }
+    }
+
+    @@media (max-width: 768px) {
+        .auth-wrapper {
+            padding: 1rem;
+        }
+
+        .auth-card {
+            padding: 1.5rem;
+        }
+
+        .auth-logo-icon {
+            width: 60px;
+            height: 60px;
+        }
+
+        .auth-logo-icon i {
+            font-size: 1.75rem;
+        }
+
+        .auth-logo h2 {
+            font-size: 1.35rem;
+        }
+    }
+
+    @@media (max-width: 576px) {
+        .auth-card {
+            padding: 1.25rem;
+        }
+
+        .form-control, .password-toggle {
+            padding: 0.7rem 0.85rem;
+        }
+    }
+</style>
+
+@section Scripts {
+    <script>
+        document.getElementById("togglePassword")?.addEventListener("click", function () {
+            const passwordInput = document.getElementById("passwordField");
+            const eyeIcon = this.querySelector("i");
+
+            if (passwordInput.type === "password") {
+                passwordInput.type = "text";
+                eyeIcon.classList.remove("fa-eye");
+                eyeIcon.classList.add("fa-eye-slash");
+            } else {
+                passwordInput.type = "password";
+                eyeIcon.classList.remove("fa-eye-slash");
+                eyeIcon.classList.add("fa-eye");
+            }
+        });
+    </script>
+}

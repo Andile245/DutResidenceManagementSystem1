@@ -1,0 +1,266 @@
+﻿@model DUTResManagementSystem.Models.Residence
+
+@{
+    ViewBag.Title = "Edit Residence";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<div class="page-header">
+    <div>
+        <h1><i class="fas fa-edit me-2" style="color:var(--primary)"></i>Edit Residence</h1>
+        <div class="breadcrumb-text">Update residence details</div>
+    </div>
+    @Html.ActionLink("Back to Residences", "ManageResidences", "Staff", null, new { @class = "btn btn-secondary btn-sm" })
+</div>
+
+<div class="row g-3">
+    <div class="col-lg-8">
+        <div class="card">
+            <div class="card-header"><i class="fas fa-building me-2" style="color:var(--primary)"></i>@Model.Name</div>
+            <div class="card-body">
+                @using (Html.BeginForm("EditResidence", "Staff", FormMethod.Post))
+                {
+                    @Html.AntiForgeryToken()
+                    @Html.HiddenFor(m => m.ResidenceID)
+
+                    <div class="row">
+                        <div class="col-md-6 mb-4">
+                            <label class="form-label">Residence Name *</label>
+                            @Html.TextBoxFor(m => m.Name, new { @class = "form-control", required = "required", placeholder = "e.g., Liberty House" })
+                            @Html.ValidationMessageFor(m => m.Name, "", new { @class = "text-danger small" })
+                        </div>
+                        <div class="col-md-6 mb-4">
+                            <label class="form-label">Capacity *</label>
+                            @Html.TextBoxFor(m => m.Capacity, new { @class = "form-control", type = "number", required = "required", min = "1" })
+                            @Html.ValidationMessageFor(m => m.Capacity, "", new { @class = "text-danger small" })
+                        </div>
+                    </div>
+
+                    <div class="mb-4">
+                        <label class="form-label">Address *</label>
+                        @Html.TextAreaFor(m => m.Address, new { @class = "form-control", rows = "3", required = "required", placeholder = "Full physical address" })
+                        @Html.ValidationMessageFor(m => m.Address, "", new { @class = "text-danger small" })
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-4">
+                            <label class="form-label">Gender Policy *</label>
+                            @Html.DropDownListFor(m => m.GenderPolicy,
+                                new SelectList(new[] { "Mixed", "Male", "Female" }, Model.GenderPolicy),
+                                "Select Policy", new { @class = "form-select", required = "required" })
+                            @Html.ValidationMessageFor(m => m.GenderPolicy, "", new { @class = "text-danger small" })
+                        </div>
+                        <div class="col-md-6 mb-4">
+                            <label class="form-label">Contact Number *</label>
+                            @Html.TextBoxFor(m => m.ContactNumber, new { @class = "form-control", required = "required", placeholder = "+27 31 000 0000" })
+                            @Html.ValidationMessageFor(m => m.ContactNumber, "", new { @class = "text-danger small" })
+                        </div>
+                    </div>
+
+                    <div class="mb-4">
+                        <label class="form-label">Faculty <span style="color:var(--text-muted);font-weight:400">(Optional — leave blank for all faculties)</span></label>
+                        @Html.DropDownListFor(m => m.Faculty,
+                            new SelectList(new[] {
+                                "Accounting and Informatics",
+                                "Applied Sciences",
+                                "Arts and Design",
+                                "Engineering and the Built Environment",
+                                "Health Sciences",
+                                "Management Sciences"
+                            }, Model.Faculty),
+                            "All Faculties / No Restriction", new { @class = "form-select" })
+                    </div>
+
+                    <div class="d-flex gap-2 justify-content-end">
+                        @Html.ActionLink("Cancel", "ManageResidences", "Staff", null, new { @class = "btn btn-secondary" })
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save me-2"></i>Save Changes
+                        </button>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+
+    <!-- Current Details Sidebar -->
+    <div class="col-lg-4">
+        <div class="card">
+            <div class="card-header"><i class="fas fa-info-circle me-2" style="color:var(--primary)"></i>Current Details</div>
+            <div class="card-body">
+                <div class="mb-3 pb-3" style="border-bottom:1px solid var(--border-light)">
+                    <div style="font-size:0.72rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.05em;font-weight:600;margin-bottom:0.25rem">Current Occupancy</div>
+                    <div style="font-size:1.5rem;font-weight:700;color:var(--text-primary)">@Model.CurrentOccupancy <span style="font-size:1rem;color:var(--text-muted)">/ @Model.Capacity</span></div>
+                    @{
+                        int pct = Model.Capacity > 0 ? (int)((double)Model.CurrentOccupancy / Model.Capacity * 100) : 0;
+                        string ocClass = Model.CurrentOccupancy >= Model.Capacity ? "danger" : pct > 80 ? "warning" : "success";
+                        string ocColor = Model.CurrentOccupancy >= Model.Capacity ? "#ef4444" : pct > 80 ? "#f59e0b" : "#22c55e";
+                    }
+                    <div class="progress mt-2" style="height:6px;background:var(--progress-bg)">
+                        <div class="progress-bar" style="width:@pct%;background:@ocColor;border-radius:4px"></div>
+                    </div>
+                    <div style="font-size:0.75rem;color:var(--text-muted);margin-top:0.25rem">@pct% Occupied</div>
+                </div>
+                <div class="mb-3 pb-3" style="border-bottom:1px solid var(--border-light)">
+                    <div style="font-size:0.72rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.05em;font-weight:600;margin-bottom:0.25rem">Gender Policy</div>
+                    @{
+                        string genderBg = Model.GenderPolicy == "Mixed" ? "rgba(59,130,246,0.15)" : Model.GenderPolicy == "Male" ? "rgba(59,130,246,0.15)" : "rgba(236,72,153,0.15)";
+                        string genderColor = Model.GenderPolicy == "Mixed" ? "var(--primary)" : Model.GenderPolicy == "Male" ? "var(--primary)" : "#ec4899";
+                    }
+                    <span class="badge" style="background:@genderBg;color:@genderColor;border:1px solid @genderColor">@Model.GenderPolicy</span>
+                </div>
+                <div>
+                    <div style="font-size:0.72rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.05em;font-weight:600;margin-bottom:0.25rem">Faculty</div>
+                    <div style="color:var(--text-secondary);font-size:0.88rem">@(string.IsNullOrEmpty(Model.Faculty) ? "All Faculties" : Model.Faculty)</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    /* Card Styles */
+    .card {
+        background: var(--bg-card) !important;
+        border: 1px solid var(--border-color) !important;
+        border-radius: 12px !important;
+    }
+
+    .card-header {
+        background: var(--card-header-bg) !important;
+        border-bottom: 1px solid var(--border-light) !important;
+        border-radius: 12px 12px 0 0 !important;
+        padding: 1rem 1.25rem;
+        font-weight: 600;
+        color: var(--text-primary);
+    }
+
+    .card-body {
+        background: var(--bg-card) !important;
+    }
+
+    /* Page Header */
+    .page-header {
+        margin-bottom: 1.5rem;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 1rem;
+    }
+
+        .page-header h1 {
+            font-family: 'Roboto', sans-serif;
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--text-primary);
+            margin: 0;
+        }
+
+    .breadcrumb-text {
+        font-size: 0.85rem;
+        color: var(--text-muted);
+        margin-top: 0.25rem;
+    }
+
+    /* Form Elements */
+    .form-control, .form-select {
+        background: var(--bg-input) !important;
+        border: 1px solid var(--border-color) !important;
+        color: var(--text-primary) !important;
+        border-radius: 8px;
+        transition: all 0.2s ease;
+    }
+
+        .form-control:focus, .form-select:focus {
+            border-color: var(--primary) !important;
+            box-shadow: 0 0 0 3px rgba(59,130,246,0.15) !important;
+            background: var(--bg-input) !important;
+            color: var(--text-primary) !important;
+        }
+
+        .form-control::placeholder {
+            color: var(--input-placeholder) !important;
+        }
+
+    .form-label {
+        color: var(--text-primary);
+        font-size: 0.85rem;
+        font-weight: 600;
+        margin-bottom: 0.5rem;
+    }
+
+    /* Buttons */
+    .btn-primary {
+        background: var(--primary) !important;
+        border-color: var(--primary) !important;
+        padding: 0.6rem 1.25rem;
+        font-weight: 600;
+        border-radius: 8px;
+        transition: all 0.2s ease;
+    }
+
+        .btn-primary:hover {
+            background: var(--primary-dark) !important;
+            border-color: var(--primary-dark) !important;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(59,130,246,0.3);
+        }
+
+    .btn-secondary {
+        background: var(--bg-elevated) !important;
+        border-color: var(--border-color) !important;
+        color: var(--text-primary) !important;
+        padding: 0.6rem 1.25rem;
+        font-weight: 600;
+        border-radius: 8px;
+        transition: all 0.2s ease;
+    }
+
+        .btn-secondary:hover {
+            background: var(--hover-bg) !important;
+            color: var(--text-primary) !important;
+            transform: translateY(-1px);
+        }
+
+    /* Validation Messages */
+    .text-danger {
+        color: #ef4444 !important;
+        font-size: 0.75rem;
+        margin-top: 0.25rem;
+        display: block;
+    }
+
+    .field-validation-error {
+        color: #ef4444 !important;
+        font-size: 0.75rem;
+    }
+
+    /* Progress Bar */
+    .progress {
+        background: var(--progress-bg) !important;
+        border-radius: 4px;
+    }
+
+    /* Light mode overrides */
+    [data-theme="light"] .card-header {
+        color: #1a1a2e;
+    }
+
+    [data-theme="light"] .form-label {
+        color: #1a1a2e;
+    }
+
+    [data-theme="light"] .btn-secondary {
+        background: #f8f9fa !important;
+        border-color: #dee2e6 !important;
+        color: #1a1a2e !important;
+    }
+
+        [data-theme="light"] .btn-secondary:hover {
+            background: #e9ecef !important;
+        }
+
+    [data-theme="light"] .text-danger {
+        color: #dc3545 !important;
+    }
+</style>

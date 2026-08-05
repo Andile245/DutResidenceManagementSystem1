@@ -1,0 +1,40 @@
+@model DUTResManagementSystem.ViewModels.BallotViewModel
+@{
+    ViewBag.Title = "Secure ballot";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<div class="container py-4">
+    <h2>Secure anonymous ballot</h2>
+    <p class="text-muted">Choose one candidate per position. Your eligibility record is stored separately from your ballot choice.</p>
+    @if (TempData["Error"] != null) { <div class="alert alert-danger">@TempData["Error"]</div> }
+    @if (TempData["Success"] != null) { <div class="alert alert-success">@TempData["Success"]</div> }
+
+    @using (Html.BeginForm())
+    {
+        @Html.AntiForgeryToken()
+        foreach (var position in Model.Positions)
+        {
+            <div class="card mb-3">
+                <div class="card-header"><strong>@position.Name</strong></div>
+                <div class="card-body">
+                    @if (!Model.Candidates.ContainsKey(position.ElectionPositionID))
+                    {
+                        <span class="text-muted">No approved candidates for this position.</span>
+                    }
+                    else
+                    {
+                        foreach (var candidate in Model.Candidates[position.ElectionPositionID])
+                        {
+                            <div class="form-check border rounded p-3 mb-2">
+                                <input class="form-check-input" type="radio" required name="selections[@position.ElectionPositionID]" id="n@candidate.ElectionNominationID" value="@candidate.ElectionNominationID" />
+                                <label class="form-check-label w-100" for="n@candidate.ElectionNominationID"><strong>@candidate.Student.FirstName @candidate.Student.LastName</strong><br /><small>@candidate.Manifesto</small></label>
+                            </div>
+                        }
+                    }
+                </div>
+            </div>
+        }
+        <button class="btn btn-danger btn-lg">Submit anonymous ballot</button>
+    }
+</div>

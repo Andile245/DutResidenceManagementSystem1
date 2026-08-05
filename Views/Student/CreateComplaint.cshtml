@@ -1,0 +1,386 @@
+@model DUTResManagementSystem.Models.Complaint
+
+@{
+    ViewBag.Title = "Submit a Complaint";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<style>
+    .cf-page {
+        max-width: 780px;
+        margin: 0 auto;
+        padding: 32px 24px 72px;
+    }
+
+    .cf-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        gap: 16px;
+        flex-wrap: wrap;
+        margin-bottom: 30px;
+    }
+
+    .cf-header h1 {
+        font-size: 22px;
+        font-weight: 700;
+        margin: 0 0 5px 0;
+        color: var(--text-primary);
+    }
+
+    .cf-header p {
+        color: var(--text-muted);
+        margin: 0;
+        font-size: 13px;
+    }
+
+    .btn-back {
+        display: inline-flex;
+        align-items: center;
+        gap: 7px;
+        background: var(--bg-card);
+        border: 1px solid var(--border-color);
+        color: var(--text-secondary);
+        border-radius: 6px;
+        padding: 9px 18px;
+        font-size: 13px;
+        text-decoration: none;
+        transition: all 0.2s;
+    }
+
+    .btn-back:hover {
+        border-color: var(--primary);
+        color: var(--text-primary);
+    }
+
+    .manager-badge {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        background: var(--bg-card);
+        border: 1px solid var(--border-bright, #2c3250);
+        border-radius: 6px;
+        padding: 12px 16px;
+        margin-bottom: 22px;
+    }
+
+    .manager-avatar {
+        width: 36px;
+        height: 36px;
+        border-radius: 50%;
+        background: rgba(61, 111, 212, 0.16);
+        border: 1px solid var(--border-color);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 13px;
+        font-weight: 700;
+        color: var(--primary);
+    }
+
+    .mb-label {
+        font-size: 11px;
+        color: var(--text-muted);
+        text-transform: uppercase;
+    }
+
+    .mb-name {
+        font-size: 13.5px;
+        font-weight: 600;
+        color: var(--text-primary);
+        margin-top: 2px;
+    }
+
+    .cf-card {
+        background: var(--bg-card);
+        border: 1px solid var(--border-color);
+        border-radius: 14px;
+        overflow: hidden;
+    }
+
+    .cf-card-header {
+        padding: 16px 22px;
+        border-bottom: 1px solid var(--border-light);
+        background: var(--bg-elevated);
+    }
+
+    .cf-card-header h2 {
+        font-size: 14px;
+        font-weight: 600;
+        color: var(--text-primary);
+        margin: 0;
+    }
+
+    .cf-card-body {
+        padding: 26px 22px;
+    }
+
+    .val-summary {
+        background: rgba(212, 74, 61, 0.1);
+        border: 1px solid rgba(212, 74, 61, 0.3);
+        border-radius: 6px;
+        padding: 14px 16px;
+        margin-bottom: 22px;
+        font-size: 13px;
+        color: var(--danger, #e07070);
+    }
+
+    .val-summary ul {
+        margin: 6px 0 0 18px;
+        padding: 0;
+    }
+
+    .f-group {
+        margin-bottom: 20px;
+    }
+
+    .f-group label {
+        display: block;
+        font-size: 11px;
+        font-weight: 600;
+        color: var(--text-secondary);
+        margin-bottom: 8px;
+        text-transform: uppercase;
+    }
+
+    .f-required {
+        color: var(--primary);
+        margin-left: 2px;
+    }
+
+    .f-input, .f-select, .f-textarea {
+        width: 100%;
+        background: var(--bg-input);
+        border: 1px solid var(--border-color);
+        color: var(--text-primary);
+        border-radius: 6px;
+        padding: 11px 14px;
+        font-size: 14px;
+        font-family: inherit;
+        outline: none;
+        transition: all 0.2s;
+    }
+
+    .f-input:focus, .f-select:focus, .f-textarea:focus {
+        border-color: var(--primary);
+        box-shadow: 0 0 0 3px rgba(239, 35, 60, 0.16);
+    }
+
+    .f-textarea {
+        resize: vertical;
+        min-height: 130px;
+        line-height: 1.6;
+    }
+
+    .f-error {
+        font-size: 12px;
+        color: #e07070;
+        margin-top: 5px;
+    }
+
+    .f-counter {
+        float: right;
+        font-size: 11px;
+        color: var(--text-muted);
+    }
+
+    .cf-callout {
+        background: rgba(61, 111, 212, 0.09);
+        border: 1px solid rgba(61, 111, 212, 0.25);
+        border-radius: 6px;
+        padding: 16px 18px;
+        margin-bottom: 22px;
+    }
+
+    .cf-callout p {
+        font-size: 13px;
+        color: var(--text-secondary);
+        line-height: 1.6;
+        margin: 0;
+    }
+
+    .cf-callout strong {
+        color: var(--text-primary);
+    }
+
+    .btn-submit {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        background: var(--primary);
+        border: 1px solid var(--primary);
+        color: white;
+        border-radius: 6px;
+        padding: 12px 28px;
+        font-size: 14px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+
+    .btn-submit:hover {
+        background: var(--primary-dark);
+        transform: translateY(-2px);
+    }
+
+    .clearfix::after {
+        content: "";
+        clear: both;
+        display: table;
+    }
+
+    @@media (max-width: 560px) {
+        .cf-page {
+            padding: 20px 14px 56px;
+        }
+        .cf-header {
+            flex-direction: column;
+        }
+    }
+</style>
+
+<div class="cf-page">
+    <div class="cf-header">
+        <div>
+            <h1>Report a Student Conduct Concern</h1>
+            <p>Select the student involved and explain the concern. Your report will be sent to the building manager for review.</p>
+        </div>
+        @Html.ActionLink("Back to Complaints", "Complaints", "Student", null, new { @class = "btn-back" })
+    </div>
+
+    @if (ViewBag.BuildingManagerName != null)
+    {
+        var mgr = (string)ViewBag.BuildingManagerName;
+        var mgrInitials = "";
+        if (!string.IsNullOrEmpty(mgr))
+        {
+            var parts = mgr.Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
+            if (parts.Length >= 2)
+            {
+                mgrInitials = parts[0][0].ToString().ToUpper() + parts[1][0].ToString().ToUpper();
+            }
+            else if (parts.Length == 1)
+            {
+                mgrInitials = parts[0][0].ToString().ToUpper();
+            }
+        }
+
+        <div class="manager-badge">
+            <div class="manager-avatar">@mgrInitials</div>
+            <div>
+                <div class="mb-label">Assigned Building Manager</div>
+                <div class="mb-name">@mgr</div>
+            </div>
+        </div>
+    }
+
+    <div class="cf-card">
+        <div class="cf-card-header">
+            <h2>Complaint Details</h2>
+        </div>
+        <div class="cf-card-body">
+            @using (Html.BeginForm())
+            {
+                @Html.AntiForgeryToken()
+
+                if (!ViewData.ModelState.IsValid)
+                {
+                    <div class="val-summary">
+                        <strong>Please fix the following errors:</strong>
+                        @Html.ValidationSummary(true)
+                    </div>
+                }
+
+                <div class="f-group">
+                    <label for="ReportedStudentID">Student being reported <span class="f-required">*</span></label>
+                    @Html.DropDownListFor(m => m.ReportedStudentID, (SelectList)ViewBag.ReportedStudents, "Select a student in your residence", new { @class = "f-select", id = "ReportedStudentID" })
+                    @Html.ValidationMessageFor(m => m.ReportedStudentID, "", new { @class = "f-error" })
+                </div>
+
+                <div class="f-group">
+                    <label for="Subject">Subject <span class="f-required">*</span></label>
+                    @Html.TextBoxFor(m => m.Subject, new
+                    {
+                        @class = "f-input",
+                        placeholder = "e.g. Repeated quiet-hours disturbance",
+                        maxlength = "120",
+                        id = "Subject"
+                    })
+                    <div class="clearfix">
+                        @Html.ValidationMessageFor(m => m.Subject, "", new { @class = "f-error" })
+                        <span class="f-counter" id="subjectCounter">0 / 120</span>
+                    </div>
+                </div>
+
+                <div class="f-group">
+                    <label for="Category">Category <span class="f-required">*</span></label>
+                    @Html.DropDownListFor(
+                        m => m.Category,
+                        new SelectList(new[] {
+                            "Cleanliness",
+                            "Noise",
+                            "Safety",
+                            "Harassment or bullying",
+                            "Property damage",
+                            "Threats or intimidation",
+                            "Residence rule violation",
+                            "Other"
+                        }),
+                        "Select a category",
+                        new { @class = "f-select", id = "Category" }
+                    )
+                    @Html.ValidationMessageFor(m => m.Category, "", new { @class = "f-error" })
+                </div>
+
+                <div class="f-group">
+                    <label for="Description">Description <span class="f-required">*</span></label>
+                    @Html.TextAreaFor(m => m.Description, new
+                    {
+                        @class = "f-textarea",
+                        placeholder = "Describe what happened, including the location, date/time, and any relevant details.",
+                        maxlength = "1000",
+                        id = "Description",
+                        rows = "6"
+                    })
+                    <div class="clearfix">
+                        @Html.ValidationMessageFor(m => m.Description, "", new { @class = "f-error" })
+                        <span class="f-counter" id="descCounter">0 / 1000</span>
+                    </div>
+                </div>
+
+                <div class="cf-callout">
+                    <p>
+                        <strong>What happens next?</strong> Your report is sent to your building manager. They review the evidence, update the status, and—where justified—may issue a Minor, Serious, or Critical conduct warning to the reported student's residence history.
+                    </p>
+                </div>
+
+                <button type="submit" class="btn-submit">
+                    Send Complaint
+                </button>
+            }
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        (function () {
+            function updateCounter(inputId, counterId, max) {
+                var input = document.getElementById(inputId);
+                var counter = document.getElementById(counterId);
+                if (!input || !counter) return;
+
+                function update() {
+                    var len = (input.value || '').length;
+                    counter.textContent = len + ' / ' + max;
+                }
+
+                input.addEventListener('input', update);
+                update();
+            }
+
+            updateCounter('Subject', 'subjectCounter', 120);
+            updateCounter('Description', 'descCounter', 1000);
+        })();
+    </script>
+}

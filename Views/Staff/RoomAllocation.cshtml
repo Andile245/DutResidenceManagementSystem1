@@ -1,0 +1,424 @@
+﻿@model DUTResManagementSystem.ViewModels.RoomAllocationViewModel
+
+@{
+    ViewBag.Title = "Room Allocation";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+@Html.AntiForgeryToken()
+
+<div class="page-header">
+    <div>
+        <h1><i class="fas fa-bed me-2" style="color:var(--primary)"></i>Room Allocation</h1>
+        <div class="breadcrumb-text"><i class="fas fa-building me-1"></i><strong>@Model.SelectedResidence.Name</strong></div>
+    </div>
+    @Html.ActionLink("Manage Rooms", "RoomManagement", "Staff", null, new { @class = "btn btn-outline-primary btn-sm" })
+</div>
+
+@if (TempData["SuccessMessage"] != null)
+{
+    <div class="alert alert-success alert-dismissible fade show mb-3"><i class="fas fa-check-circle me-2"></i>@TempData["SuccessMessage"]<button type="button" class="btn-close" data-bs-dismiss="alert"></button></div>
+}
+@if (TempData["ErrorMessage"] != null)
+{
+    <div class="alert alert-danger alert-dismissible fade show mb-3"><i class="fas fa-exclamation-circle me-2"></i>@TempData["ErrorMessage"]<button type="button" class="btn-close" data-bs-dismiss="alert"></button></div>
+}
+
+<!-- Stats Overview -->
+<div class="row g-3 mb-4">
+    <div class="col-md-3">
+        <div class="stat-card">
+            <div class="stat-icon blue"><i class="fas fa-users"></i></div>
+            <div><div class="stat-num">@ViewBag.TotalStudents</div><div class="stat-label">Total Students</div></div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="stat-card">
+            <div class="stat-icon green"><i class="fas fa-check-circle"></i></div>
+            <div><div class="stat-num">@ViewBag.AllocatedCount</div><div class="stat-label">With Rooms</div></div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="stat-card">
+            <div class="stat-icon success"><i class="fas fa-check-double"></i></div>
+            <div><div class="stat-num" style="color:#22c55e">@Model.UnallocatedStudentsByStatus.CheckedInCount</div><div class="stat-label">Checked In - Ready</div></div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="stat-card">
+            <div class="stat-icon yellow"><i class="fas fa-clock"></i></div>
+            <div><div class="stat-num" style="color:#eab308">@Model.UnallocatedStudentsByStatus.NotCheckedInCount</div><div class="stat-label">Not Checked In Yet</div></div>
+        </div>
+    </div>
+</div>
+
+<!-- Filter Tabs -->
+<ul class="nav nav-tabs mb-4" id="studentTabs" role="tablist">
+    <li class="nav-item" role="presentation">
+        <button class="nav-link active" id="ready-tab" data-bs-toggle="tab" data-bs-target="#ready" type="button" role="tab">
+            <i class="fas fa-check-circle me-2" style="color:#22c55e"></i>Ready for Allocation
+            <span class="badge bg-success ms-2">@Model.UnallocatedStudentsByStatus.CheckedInCount</span>
+        </button>
+    </li>
+    <li class="nav-item" role="presentation">
+        <button class="nav-link" id="not-ready-tab" data-bs-toggle="tab" data-bs-target="#not-ready" type="button" role="tab">
+            <i class="fas fa-clock me-2" style="color:#eab308"></i>Not Checked In
+            <span class="badge bg-warning ms-2">@Model.UnallocatedStudentsByStatus.NotCheckedInCount</span>
+        </button>
+    </li>
+    <li class="nav-item" role="presentation">
+        <button class="nav-link" id="allocated-tab" data-bs-toggle="tab" data-bs-target="#allocated" type="button" role="tab">
+            <i class="fas fa-bed me-2" style="color:#3b82f6"></i>Already Allocated
+            <span class="badge bg-primary ms-2">@ViewBag.AllocatedCount</span>
+        </button>
+    </li>
+</ul>
+
+<div class="tab-content">
+    <!-- TAB 1: Students Who Have Checked In - READY FOR ALLOCATION -->
+    <div class="tab-pane fade show active" id="ready" role="tabpanel">
+        <div class="row g-3">
+            <!-- Students ready for allocation -->
+            <div class="col-lg-4">
+                <div class="card h-100">
+                    <div class="card-header d-flex justify-content-between align-items-center" style="border-color:rgba(34,197,94,0.3)!important">
+                        <span><i class="fas fa-check-circle me-2" style="color:#22c55e"></i>Ready to Allocate</span>
+                        <span class="badge" style="background:rgba(34,197,94,0.15);color:#22c55e;border:1px solid rgba(34,197,94,0.3)">@Model.UnallocatedStudentsByStatus.CheckedInCount</span>
+                    </div>
+                    <div class="card-body p-0" style="max-height:580px;overflow-y:auto">
+                        @if (Model.UnallocatedStudentsByStatus.CheckedIn.Any())
+                        {
+                            foreach (var student in Model.UnallocatedStudentsByStatus.CheckedIn)
+                            {
+                                <div class="d-flex align-items-center justify-content-between p-3" style="border-bottom:1px solid rgba(255,255,255,0.04)">
+                                    <div>
+                                        <div style="font-weight:600;color:#E8E8F0;font-size:0.88rem">@student.FirstName @student.LastName</div>
+                                        <div style="font-size:0.75rem;color:#6B6B80">@student.StudentNumber</div>
+                                        <div class="mt-1">
+                                            <span class="badge bg-@(student.Gender == "Male" ? "primary" : student.Gender == "Female" ? "danger" : "secondary")" style="font-size:0.7rem">@student.Gender</span>
+                                            <span class="badge bg-success ms-1" style="font-size:0.7rem"><i class="fas fa-check me-1"></i>Checked In</span>
+                                        </div>
+                                    </div>
+                                    <button class="btn btn-sm btn-success" onclick="openAllocateRoomModal(@student.StudentID, '@student.FirstName @student.LastName', '@student.Gender')">
+                                        <i class="fas fa-bed me-1"></i>Assign Room
+                                    </button>
+                                </div>
+                            }
+                        }
+                        else
+                        {
+                            <div class="text-center py-5" style="color:#6B6B80">
+                                <i class="fas fa-check-circle fa-3x mb-3" style="color:#22c55e"></i>
+                                <p>No students are ready for allocation yet.</p>
+                                <p style="font-size:0.8rem">Students need to scan their QR code first.</p>
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
+
+            <!-- Room Cards -->
+            <div class="col-lg-8">
+                <div class="card">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <span><i class="fas fa-door-open me-2" style="color:var(--primary)"></i>Available Rooms</span>
+                        <span class="badge bg-primary">@Model.Rooms.Count(r => !r.IsFull) available</span>
+                    </div>
+                    <div class="card-body" style="max-height:620px;overflow-y:auto">
+                        @if (Model.Rooms.Any())
+                        {
+                            <div class="row g-3">
+                                @foreach (var rwo in Model.Rooms.Where(r => !r.IsFull || r.Occupants.Any()))
+                                {
+                                    int pct = rwo.Room.Capacity > 0 ? (int)((double)rwo.CurrentOccupants / rwo.Room.Capacity * 100) : 0;
+                                    string bc = rwo.BadgeColour;
+                                    string borderColor = bc == "danger" ? "rgba(239,35,60,0.3)" : bc == "warning" ? "rgba(234,179,8,0.3)" : "rgba(34,197,94,0.3)";
+                                    string iconColor = bc == "danger" ? "#f87171" : bc == "warning" ? "#eab308" : "#22c55e";
+                                    <div class="col-md-6">
+                                        <div class="card" style="border-color:@borderColor!important">
+                                            <div class="card-header py-2 d-flex justify-content-between align-items-center" style="background:rgba(255,255,255,0.03)!important">
+                                                <span style="font-weight:700;color:#E8E8F0">
+                                                    <i class="fas fa-door-open me-1" style="color:@iconColor"></i>
+                                                    Room @rwo.Room.RoomNumber
+                                                    @if (rwo.Room.Floor.HasValue)
+                                                    {<small style="color:#6B6B80"> (Floor @rwo.Room.Floor)</small>}
+                                                </span>
+                                                <span style="font-size:0.78rem;color:@iconColor;font-weight:700">@rwo.CurrentOccupants/@rwo.Room.Capacity</span>
+                                            </div>
+                                            <div class="card-body py-2">
+                                                <div class="d-flex gap-2 mb-2 flex-wrap">
+                                                    <span class="badge bg-secondary" style="font-size:0.72rem">@rwo.Room.RoomType</span>
+                                                    <span class="badge bg-@(rwo.Room.Gender=="Male"?"primary":rwo.Room.Gender=="Female"?"danger":"success")" style="font-size:0.72rem">@rwo.Room.Gender</span>
+                                                    <span class="badge bg-@(rwo.Room.Status=="Available"?"success":"danger")" style="font-size:0.72rem">@rwo.Room.Status</span>
+                                                </div>
+                                                <div class="progress mb-2" style="height:5px"><div class="progress-bar bg-@bc" style="width:@pct%"></div></div>
+                                                @if (rwo.Occupants.Any())
+                                                {
+                                                    foreach (var o in rwo.Occupants)
+                                                    {
+                                                        <div class="d-flex justify-content-between align-items-center py-1" style="border-bottom:1px solid rgba(255,255,255,0.04);font-size:0.8rem">
+                                                            <span style="color:#C8C8D8"><i class="fas fa-user me-1" style="color:#6B6B80"></i>@o.FirstName @o.LastName <span style="color:#6B6B80">(@o.StudentNumber)</span></span>
+                                                            @using (Html.BeginForm("DeallocateRoom", "Staff", FormMethod.Post, new { @class = "d-inline" }))
+                                                            {
+                                                                @Html.AntiForgeryToken()
+                                                                <input type="hidden" name="studentId" value="@o.StudentID" />
+                                                                <button type="submit" class="btn btn-outline-danger btn-sm py-0 px-1" style="font-size:0.72rem" onclick="return confirm('Remove @o.FirstName from Room @rwo.Room.RoomNumber?')"><i class="fas fa-times"></i></button>
+                                                            }
+                                                        </div>
+                                                    }
+                                                }
+                                                else
+                                                { <p style="color:#6B6B80;font-size:0.78rem;margin:0"><i>No occupants yet</i></p>}
+                                            </div>
+                                        </div>
+                                    </div>
+                                }
+                            </div>
+                        }
+                        else
+                        {
+                            <div class="text-center py-5" style="color:#6B6B80">
+                                <i class="fas fa-door-open fa-3x mb-3"></i>
+                                <p>No rooms. <a href="@Url.Action("RoomManagement","Staff")">Add rooms first</a></p>
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- TAB 2: Students Who Have NOT Checked In Yet -->
+    <div class="tab-pane fade" id="not-ready" role="tabpanel">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center" style="border-color:rgba(234,179,8,0.3)!important">
+                <span><i class="fas fa-clock me-2" style="color:#eab308"></i>Students Who Haven't Checked In Yet</span>
+                <span class="badge" style="background:rgba(234,179,8,0.15);color:#eab308">@Model.UnallocatedStudentsByStatus.NotCheckedInCount</span>
+            </div>
+            <div class="card-body p-0">
+                @if (Model.UnallocatedStudentsByStatus.NotCheckedIn.Any())
+                {
+                    <div class="table-responsive">
+                        <table class="table mb-0" id="notCheckedInTable">
+                            <thead>
+                                <tr>
+                                    <th>Student</th>
+                                    <th>Student #</th>
+                                    <th>Gender</th>
+                                    <th>Faculty</th>
+                                    <th>Action Required</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var student in Model.UnallocatedStudentsByStatus.NotCheckedIn)
+                                {
+                                    <tr>
+                                        <td>
+                                            <div style="font-weight:600;color:#E8E8F0">@student.FirstName @student.LastName</div>
+                                            <div style="font-size:0.75rem;color:#6B6B80">@student.Email</div>
+                                        </td>
+                                        <td style="color:#A0A0B5">@student.StudentNumber</td>
+                                        <td>
+                                            <span class="badge bg-@(student.Gender=="Male"?"primary":student.Gender=="Female"?"danger":"secondary")">
+                                                @student.Gender
+                                            </span>
+                                        </td>
+                                        <td style="color:#A0A0B5;font-size:0.85rem">@student.Faculty</td>
+                                        <td>
+                                            <span class="text-muted" style="font-size:0.75rem">
+                                                <i class="fas fa-info-circle me-1"></i>Student must scan QR code first
+                                            </span>
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                }
+                else
+                {
+                    <div class="text-center py-5" style="color:#6B6B80">
+                        <i class="fas fa-check-circle fa-3x mb-3" style="color:#22c55e"></i>
+                        <p>All unallocated students have checked in!</p>
+                        <p style="font-size:0.8rem">Go to the "Ready for Allocation" tab to assign rooms.</p>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+
+    <!-- TAB 3: Students Already Allocated to Rooms -->
+    <div class="tab-pane fade" id="allocated" role="tabpanel">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <span><i class="fas fa-bed me-2" style="color:#3b82f6"></i>Students Already Allocated</span>
+                <span class="badge bg-primary">@ViewBag.AllocatedCount</span>
+            </div>
+            <div class="card-body p-0">
+                @if (Model.StudentsWithRooms.Any())
+                {
+                    <div class="table-responsive">
+                        <table class="table mb-0" id="allocatedStudentsTable">
+                            <thead>
+                                <tr>
+                                    <th>Student</th>
+                                    <th>Student #</th>
+                                    <th>Gender</th>
+                                    <th>Room</th>
+                                    <th>Room Type</th>
+                                    <th>Floor</th>
+                                    <th>Status</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var item in Model.StudentsWithRooms)
+                                {
+                                    <tr>
+                                        <td>
+                                            <div style="font-weight:600;color:#E8E8F0">@item.Student.FirstName @item.Student.LastName</div>
+                                            <div style="font-size:0.75rem;color:#6B6B80">@item.Student.Email</div>
+                                        </td>
+                                        <td style="color:#A0A0B5">@item.Student.StudentNumber</td>
+                                        <td>
+                                            <span class="badge bg-@(item.Student.Gender=="Male"?"primary":item.Student.Gender=="Female"?"danger":"secondary")">
+                                                @item.Student.Gender
+                                            </span>
+                                        </td>
+                                        <td>
+                                            <span class="badge bg-success" style="font-size:0.85rem">
+                                                <i class="fas fa-door-open me-1"></i>Room @item.RoomNumber
+                                            </span>
+                                        </td>
+                                        <td style="color:#A0A0B5;font-size:0.85rem">@item.Room.RoomType</td>
+                                        <td style="color:#A0A0B5;font-size:0.85rem">@(item.Room.Floor?.ToString() ?? "—")</td>
+                                        <td>
+                                            @if (item.HasCheckedOut)
+                                            {
+                                                <span class="badge bg-secondary">
+                                                    <i class="fas fa-sign-out-alt me-1"></i>Checked Out
+                                                    @if (item.CheckOutTime.HasValue)
+                                                    {
+                                                        <br /><small class="text-muted">@item.CheckOutTime.Value.ToString("dd MMM HH:mm")</small>
+                                                    }
+                                                </span>
+                                            }
+                                            else if (item.HasCheckedIn)
+                                            {
+                                                <span class="badge bg-success">
+                                                    <i class="fas fa-check me-1"></i>Checked In
+                                                    @if (item.CheckInTime.HasValue)
+                                                    {
+                                                        <br /><small class="text-success">@item.CheckInTime.Value.ToString("dd MMM HH:mm")</small>
+                                                    }
+                                                </span>
+                                            }
+                                            else
+                                            {
+                                                <span class="badge bg-warning">
+                                                    <i class="fas fa-clock me-1"></i>Not Checked In
+                                                </span>
+                                            }
+                                        </td>
+                                        <td>
+                                            @using (Html.BeginForm("DeallocateRoom", "Staff", FormMethod.Post, new { @class = "d-inline" }))
+                                            {
+                                                @Html.AntiForgeryToken()
+                                                <input type="hidden" name="studentId" value="@item.Student.StudentID" />
+                                                <button type="submit" class="btn btn-sm btn-outline-danger"
+                                                        onclick="return confirm('Remove @item.Student.FirstName from Room @item.RoomNumber?')">
+                                                    <i class="fas fa-times me-1"></i>Remove
+                                                </button>
+                                            }
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                }
+                else
+                {
+                    <div class="text-center py-5" style="color:#6B6B80">
+                        <i class="fas fa-bed fa-3x mb-3"></i>
+                        <h5>No students have been allocated to rooms yet</h5>
+                        <p>Go to the "Ready for Allocation" tab to start allocating.</p>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Assign Room Modal -->
+<div class="modal fade" id="allocateRoomModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header"><h5 class="modal-title"><i class="fas fa-bed me-2" style="color:var(--primary)"></i>Assign Room</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+            @using (Html.BeginForm("AllocateRoom", "Staff", FormMethod.Post))
+            {
+                @Html.AntiForgeryToken()
+                <input type="hidden" id="allocateStudentId" name="studentId" />
+                <div class="modal-body">
+                    <p class="mb-3" style="color:#A0A0B5;font-size:0.85rem">Assigning room for: <strong id="allocateStudentName" style="color:#E8E8F0"></strong> <span id="allocateStudentGenderBadge" class="badge ms-1"></span></p>
+                    <div class="mb-3">
+                        <label class="form-label">Select Room</label>
+                        <select class="form-select" id="allocateRoomId" name="roomId" required><option value="">-- Loading rooms... --</option></select>
+                        <div class="form-text">Only compatible rooms with free space shown.</div>
+                    </div>
+                    <div id="roomDetailPreview" class="alert alert-info d-none mt-2"></div>
+                </div>
+                <div class="modal-footer"><button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button><button type="submit" class="btn btn-primary"><i class="fas fa-check me-1"></i>Confirm</button></div>
+            }
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        $(document).ready(function() {
+            $('#notCheckedInTable').DataTable({
+                pageLength: 25,
+                order: [[1, 'asc']]
+            });
+            $('#allocatedStudentsTable').DataTable({
+                pageLength: 25,
+                order: [[3, 'asc']]
+            });
+        });
+
+        function openAllocateRoomModal(studentId, studentName, gender) {
+            document.getElementById('allocateStudentId').value = studentId;
+            document.getElementById('allocateStudentName').textContent = studentName;
+            document.getElementById('roomDetailPreview').classList.add('d-none');
+            var badge = document.getElementById('allocateStudentGenderBadge');
+            badge.textContent = gender;
+            badge.className = 'badge ms-1 bg-' + (gender === 'Male' ? 'primary' : gender === 'Female' ? 'danger' : 'secondary');
+            var roomSelect = document.getElementById('allocateRoomId');
+            roomSelect.innerHTML = '<option value="">Loading rooms...</option>';
+            $.get('@Url.Action("GetRoomsForResidence", "Staff")', { gender: gender }, function (rooms) {
+                roomSelect.innerHTML = '<option value="">-- Select a Room --</option>';
+                if (rooms.length === 0) { roomSelect.innerHTML += '<option disabled>No compatible rooms available</option>'; }
+                else {
+                    rooms.forEach(function (r) {
+                        var floor = r.Floor ? ' | Floor ' + r.Floor : '';
+                        roomSelect.innerHTML += '<option value="' + r.RoomID + '" data-type="' + r.RoomType + '" data-floor="' + (r.Floor ?? '') + '" data-capacity="' + r.Capacity + '" data-occupants="' + r.CurrentOccupants + '" data-gender="' + r.Gender + '">' +
+                            'Room ' + r.RoomNumber + ' (' + r.RoomType + ')' + floor + ' — ' + r.CurrentOccupants + '/' + r.Capacity + ' [' + r.Gender + ']</option>';
+                    });
+                }
+            });
+            new bootstrap.Modal(document.getElementById('allocateRoomModal')).show();
+        }
+
+        document.addEventListener('change', function (e) {
+            if (e.target && e.target.id === 'allocateRoomId') {
+                var opt = e.target.selectedOptions[0];
+                var preview = document.getElementById('roomDetailPreview');
+                if (!opt || !opt.value) { preview.classList.add('d-none'); return; }
+                var free = parseInt(opt.dataset.capacity) - parseInt(opt.dataset.occupants);
+                preview.innerHTML = '<strong>' + opt.dataset.type + ' Room</strong>' + (opt.dataset.floor ? ' | Floor ' + opt.dataset.floor : '') + ' | Gender: <strong>' + opt.dataset.gender + '</strong><br>Occupancy: <strong>' + opt.dataset.occupants + '/' + opt.dataset.capacity + '</strong> — <span style="color:#22c55e;font-weight:700">' + free + ' bed(s) free</span>';
+                preview.classList.remove('d-none');
+            }
+        });
+    </script>
+}

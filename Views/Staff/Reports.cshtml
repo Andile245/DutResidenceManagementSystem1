@@ -1,0 +1,593 @@
+﻿@model IEnumerable<DUTResManagementSystem.Models.Maintenance>
+
+@{
+    ViewBag.Title = "Maintenance Reports";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+
+    bool isAdmin = ViewBag.StaffRole == "Admin";
+    int columnCount = isAdmin ? 10 : 9;
+}
+
+<!-- ── Page Header ── -->
+<div class="page-header">
+    <div>
+        <h1>
+            <i class="fas fa-tools me-2" style="color:var(--primary)"></i>
+            Maintenance Reports
+        </h1>
+
+        @if (!isAdmin && ViewBag.ResidenceName != null)
+        {
+            <div class="breadcrumb-text">
+                <i class="fas fa-building me-1"></i>
+                Showing requests for <strong>@ViewBag.ResidenceName</strong>
+            </div>
+        }
+    </div>
+</div>
+
+<!-- ── Alerts ── -->
+@if (TempData["SuccessMessage"] != null)
+{
+    <div class="alert alert-success alert-dismissible fade show mb-3">
+        <i class="fas fa-check-circle me-2"></i>@TempData["SuccessMessage"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+}
+
+@if (TempData["ErrorMessage"] != null)
+{
+    <div class="alert alert-danger alert-dismissible fade show mb-3">
+        <i class="fas fa-exclamation-circle me-2"></i>@TempData["ErrorMessage"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+}
+
+@if (TempData["EmailWarning"] != null)
+{
+    <div class="alert alert-warning alert-dismissible fade show mb-3">
+        <i class="fas fa-exclamation-triangle me-2"></i>@TempData["EmailWarning"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+}
+
+<!-- ── Stat Cards ── -->
+<div class="row g-3 mb-4">
+    <div class="col-md-3">
+        <div class="stat-card">
+            <div class="stat-icon" style="background:rgba(245,158,11,0.15);color:#f59e0b">
+                <i class="fas fa-clock"></i>
+            </div>
+            <div>
+                <div class="stat-num">@Model.Count(x => x.Status == "Pending")</div>
+                <div class="stat-label">Pending</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-3">
+        <div class="stat-card">
+            <div class="stat-icon" style="background:rgba(59,130,246,0.15);color:var(--primary)">
+                <i class="fas fa-spinner"></i>
+            </div>
+            <div>
+                <div class="stat-num">@Model.Count(x => x.Status == "In Progress")</div>
+                <div class="stat-label">In Progress</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-3">
+        <div class="stat-card">
+            <div class="stat-icon" style="background:rgba(34,197,94,0.15);color:#22c55e">
+                <i class="fas fa-check-circle"></i>
+            </div>
+            <div>
+                <div class="stat-num">@Model.Count(x => x.Status == "Resolved")</div>
+                <div class="stat-label">Resolved</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-3">
+        <div class="stat-card">
+            <div class="stat-icon" style="background:rgba(239,68,68,0.15);color:#ef4444">
+                <i class="fas fa-list"></i>
+            </div>
+            <div>
+                <div class="stat-num">@Model.Count()</div>
+                <div class="stat-label">Total</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ── Table Card ── -->
+<div class="card">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <div>
+            <i class="fas fa-tools me-2" style="color:var(--primary)"></i>
+            @(isAdmin
+                ? "All Maintenance Requests"
+                : "Maintenance Requests — " + ViewBag.ResidenceName)
+        </div>
+    </div>
+
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table mb-0" id="reportsTable">
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        @if (isAdmin)
+                        {
+                            <th>Residence</th>
+                        }
+                        <th>Student</th>
+                        <th>Room</th>
+                        <th>Issue</th>
+                        <th>Date</th>
+                        <th>Status</th>
+                        <th>Technician</th>
+                        <th>Image</th>
+                        <th>Assign</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var report in Model)
+                    {
+                        string badgeClass = report.Status == "Pending" ? "warning" :
+                                            report.Status == "In Progress" ? "info" : "success";
+
+                        string badgeBg = report.Status == "Pending" ? "rgba(245,158,11,0.15)" :
+                                         report.Status == "In Progress" ? "rgba(59,130,246,0.15)" : "rgba(34,197,94,0.15)";
+
+                        string badgeColor = report.Status == "Pending" ? "#f59e0b" :
+                                            report.Status == "In Progress" ? "var(--primary)" : "#22c55e";
+
+                        <tr>
+                            <td>@report.MaintenanceID</td>
+
+                            @if (isAdmin)
+                            {
+                                <td style="color:var(--text-muted)">@(report.Student?.Residence?.Name ?? "—")</td>
+                            }
+
+                            <td>
+                                <div class="fw-semibold" style="color:var(--text-primary)">
+                                    @report.Student.FirstName @report.Student.LastName
+                                </div>
+                                <small class="text-muted">@report.Student.StudentNumber</small>
+                            </td>
+
+                            <td style="color:var(--text-secondary)">@report.RoomNumber</td>
+
+                            <td style="max-width:220px; color:var(--text-secondary)">
+                                @(report.IssueDescription?.Length > 60
+                                    ? report.IssueDescription.Substring(0, 60) + "…"
+                                    : report.IssueDescription)
+                            </td>
+
+                            <td style="white-space:nowrap; color:var(--text-muted)">
+                                @report.DateReported.ToString("dd MMM yyyy")
+                            </td>
+
+                            <td>
+                                <span class="badge" style="background:@badgeBg; color:@badgeColor; border:1px solid @badgeColor">
+                                    @report.Status
+                                </span>
+                            </td>
+
+                            <!-- Technician -->
+                            <td>
+                                @if (report.Technician != null)
+                                {
+                                    <span class="badge" style="background:var(--bg-elevated); color:var(--text-secondary); border:1px solid var(--border)">
+                                        <i class="fas fa-user-cog me-1" style="color:var(--primary)"></i>
+                                        @report.Technician.FullName
+                                    </span>
+                                }
+                                else
+                                {
+                                    <span class="text-muted">None</span>
+                                }
+                            </td>
+
+                            <!-- Student-uploaded Image -->
+                            <td>
+                                @if (!string.IsNullOrEmpty(report.ImagePath))
+                                {
+                                    <a href="@report.ImagePath" target="_blank" title="View submitted photo">
+                                        <img src="@report.ImagePath"
+                                             width="50" height="50"
+                                             style="border-radius:8px;object-fit:cover; border:1px solid var(--border)" />
+                                    </a>
+                                }
+                                else
+                                {
+                                    <span class="text-muted">—</span>
+                                }
+                            </td>
+
+                            <!-- Assign / Status column -->
+                            <td>
+                                @if (report.Status == "Pending")
+                                {
+                                    <button type="button"
+                                            class="btn btn-sm btn-open-assign"
+                                            data-id="@report.MaintenanceID"
+                                            style="background:var(--primary); color:white; border:none">
+                                        <i class="fas fa-user-plus me-1"></i>Assign
+                                    </button>
+                                }
+                                else if (report.Status == "In Progress")
+                                {
+                                    <span class="badge" style="background:rgba(59,130,246,0.15); color:var(--primary); border:1px solid rgba(59,130,246,0.3)">
+                                        <i class="fas fa-user-cog me-1"></i>Assigned
+                                    </span>
+                                }
+                                else
+                                {
+                                    <span class="badge" style="background:rgba(34,197,94,0.15); color:#22c55e; border:1px solid rgba(34,197,94,0.3)">
+                                        <i class="fas fa-check me-1"></i>Resolved
+                                    </span>
+                                }
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- ── ASSIGN TECHNICIAN MODAL ── -->
+<div class="modal fade" id="assignModal" tabindex="-1" aria-labelledby="assignModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="assignModalLabel">
+                    <i class="fas fa-user-plus me-2" style="color:var(--primary)"></i>
+                    Assign Technician
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+
+            @using (Html.BeginForm("AssignTechnician", "Staff", FormMethod.Post, new { id = "assignForm" }))
+            {
+                @Html.AntiForgeryToken()
+                <input type="hidden" id="modalMaintenanceId" name="maintenanceId" value="" />
+
+                <div class="modal-body">
+                    <p class="small mb-3" style="color:var(--text-muted)">
+                        <i class="fas fa-info-circle me-1"></i>
+                        Technicians with 5 or more active jobs are shown as unavailable.
+                    </p>
+
+                    <div class="row g-3">
+                        <div class="col-md-5">
+                            <label class="form-label fw-semibold">Specialisation</label>
+                            <select id="professionSelect" class="form-select">
+                                <option value="">— Select Specialisation —</option>
+                                <option>Plumber</option>
+                                <option>Electrician</option>
+                                <option>Painter</option>
+                                <option>Carpenter</option>
+                                <option>Cleaner</option>
+                            </select>
+                        </div>
+
+                        <div class="col-md-7">
+                            <label class="form-label fw-semibold">Technician</label>
+                            <select id="technicianSelect" name="technicianId" class="form-select" required>
+                                <option value="">— Select a Specialisation First —</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">
+                        <i class="fas fa-times me-1"></i>Cancel
+                    </button>
+                    <button type="submit" id="confirmAssignBtn" class="btn btn-primary" disabled>
+                        <i class="fas fa-save me-1"></i>Confirm Assign
+                    </button>
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+<style>
+    /* Stat Cards */
+    .stat-card {
+        background: var(--bg-card) !important;
+        border: 1px solid var(--border-color) !important;
+        border-radius: 12px;
+        padding: 1.25rem;
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        transition: transform 0.2s, border-color 0.2s;
+    }
+
+        .stat-card:hover {
+            transform: translateY(-2px);
+            border-color: var(--primary) !important;
+        }
+
+    .stat-num {
+        font-family: 'Roboto', sans-serif;
+        font-size: 1.8rem;
+        font-weight: 700;
+        color: var(--text-primary);
+        line-height: 1;
+    }
+
+    .stat-label {
+        font-size: 0.78rem;
+        color: var(--text-muted);
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        margin-top: 0.2rem;
+    }
+
+    .stat-icon {
+        width: 52px;
+        height: 52px;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.4rem;
+        flex-shrink: 0;
+    }
+
+    /* Card */
+    .card {
+        background: var(--bg-card) !important;
+        border: 1px solid var(--border-color) !important;
+        border-radius: 12px !important;
+    }
+
+    .card-header {
+        background: var(--card-header-bg) !important;
+        border-bottom: 1px solid var(--border-light) !important;
+        border-radius: 12px 12px 0 0 !important;
+        padding: 1rem 1.25rem;
+        font-weight: 600;
+        color: var(--text-primary);
+    }
+
+    /* Table */
+    .table {
+        color: var(--text-secondary) !important;
+    }
+
+        .table thead th {
+            background: var(--bg-elevated) !important;
+            color: var(--text-primary) !important;
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            border-color: var(--border-light) !important;
+            font-weight: 600;
+        }
+
+        .table tbody tr {
+            border-color: var(--border-light) !important;
+        }
+
+            .table tbody tr:hover {
+                background: var(--table-hover) !important;
+            }
+
+        .table td, .table th {
+            border-color: var(--border-light) !important;
+            color: var(--text-secondary);
+        }
+
+    /* Modal */
+    .modal-content {
+        background: var(--modal-bg) !important;
+        border: 1px solid var(--modal-border) !important;
+        border-radius: 16px;
+    }
+
+    .modal-header {
+        border-bottom: 1px solid var(--border-light) !important;
+    }
+
+    .modal-footer {
+        border-top: 1px solid var(--border-light) !important;
+    }
+
+    .modal-title {
+        color: var(--text-primary);
+    }
+
+    /* Form Elements */
+    .form-control, .form-select {
+        background: var(--bg-input) !important;
+        border: 1px solid var(--border-color) !important;
+        color: var(--text-primary) !important;
+        border-radius: 8px;
+    }
+
+        .form-control:focus, .form-select:focus {
+            border-color: var(--primary) !important;
+            box-shadow: 0 0 0 3px rgba(59,130,246,0.15) !important;
+        }
+
+    .form-label {
+        color: var(--text-primary);
+        font-size: 0.85rem;
+        font-weight: 600;
+    }
+
+    /* Buttons */
+    .btn-outline-secondary {
+        background: transparent;
+        border: 1px solid var(--border-color);
+        color: var(--text-secondary);
+    }
+
+        .btn-outline-secondary:hover {
+            background: var(--hover-bg);
+            color: var(--text-primary);
+        }
+
+    .btn-primary {
+        background: var(--primary) !important;
+        border-color: var(--primary) !important;
+    }
+
+        .btn-primary:hover {
+            background: var(--primary-dark) !important;
+            border-color: var(--primary-dark) !important;
+        }
+
+        .btn-primary:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+    /* Alerts */
+    .alert-success {
+        background: rgba(34,197,94,0.1) !important;
+        border-color: rgba(34,197,94,0.2) !important;
+        color: var(--text-primary) !important;
+    }
+
+    [data-theme="light"] .alert-success {
+        background: #d4edda !important;
+        color: #155724 !important;
+        border-color: #c3e6cb !important;
+    }
+
+    .alert-danger {
+        background: rgba(239,68,68,0.1) !important;
+        border-color: rgba(239,68,68,0.2) !important;
+        color: var(--text-primary) !important;
+    }
+
+    [data-theme="light"] .alert-danger {
+        background: #f8d7da !important;
+        color: #721c24 !important;
+        border-color: #f5c6cb !important;
+    }
+
+    .alert-warning {
+        background: rgba(245,158,11,0.1) !important;
+        border-color: rgba(245,158,11,0.2) !important;
+        color: var(--text-primary) !important;
+    }
+
+    [data-theme="light"] .alert-warning {
+        background: #fff3cd !important;
+        color: #856404 !important;
+        border-color: #ffeeba !important;
+    }
+
+    /* Light mode overrides */
+    [data-theme="light"] .stat-num {
+        color: #1a1a2e;
+    }
+
+    [data-theme="light"] .card-header {
+        color: #1a1a2e;
+    }
+
+    [data-theme="light"] .text-muted {
+        color: #6c757d !important;
+    }
+
+    .text-muted {
+        color: var(--text-muted) !important;
+    }
+</style>
+
+@section Scripts {
+    <script>
+        $(document).ready(function () {
+            // Initialise DataTables
+            $('#reportsTable').DataTable({
+                pageLength: 10,
+                order: [[0, 'desc']],
+                responsive: true,
+                language: {
+                    search: "Search:",
+                    lengthMenu: "Show _MENU_ entries",
+                    info: "Showing _START_ to _END_ of _TOTAL_ requests",
+                    paginate: {
+                        previous: "Previous",
+                        next: "Next"
+                    }
+                }
+            });
+
+            // Open modal when any Assign button is clicked
+            $(document).on('click', '.btn-open-assign', function () {
+                var id = $(this).data('id');
+                $('#modalMaintenanceId').val(id);
+                $('#assignModalLabel').html(
+                    '<i class="fas fa-user-plus me-2" style="color:var(--primary)"></i>' +
+                    'Assign Technician — Request #' + id
+                );
+                $('#professionSelect').val('');
+                $('#technicianSelect')
+                    .empty()
+                    .append('<option value="">— Select a Specialisation First —</option>');
+                $('#confirmAssignBtn').prop('disabled', true);
+                new bootstrap.Modal(document.getElementById('assignModal')).show();
+            });
+
+            // Load technicians when a specialisation is selected
+            $('#professionSelect').on('change', function () {
+                var profession = $(this).val();
+                var $techDropdown = $('#technicianSelect');
+                $('#confirmAssignBtn').prop('disabled', true);
+                $techDropdown.empty().append('<option value="">Loading…</option>');
+
+                if (!profession) {
+                    $techDropdown.empty().append('<option value="">— Select a Specialisation First —</option>');
+                    return;
+                }
+
+                $.get('@Url.Action("GetTechnicians", "Staff")', { profession: profession })
+                    .done(function (data) {
+                        $techDropdown.empty().append('<option value="">— Select Technician —</option>');
+                        if (data.length === 0) {
+                            $techDropdown.append('<option value="" disabled>No technicians registered for this specialisation</option>');
+                            return;
+                        }
+                        $.each(data, function (i, tech) {
+                            var jobLabel = tech.PendingJobs === 1 ? '1 active job' : tech.PendingJobs + ' active jobs';
+                            if (tech.PendingJobs >= 5) {
+                                $techDropdown.append($('<option>', {
+                                    value: tech.TechnicianID,
+                                    text: tech.FullName + ' — Unavailable (' + jobLabel + ')',
+                                    disabled: true
+                                }));
+                            } else {
+                                $techDropdown.append($('<option>', {
+                                    value: tech.TechnicianID,
+                                    text: tech.FullName + ' (' + jobLabel + ')'
+                                }));
+                            }
+                        });
+                    })
+                    .fail(function () {
+                        $techDropdown.empty().append('<option value="">— Select Technician —</option>');
+                        alert('Could not load technicians. Please check your connection and try again.');
+                    });
+            });
+
+            // Enable Confirm button only when a technician is selected
+            $(document).on('change', '#technicianSelect', function () {
+                $('#confirmAssignBtn').prop('disabled', !$(this).val());
+            });
+        });
+    </script>
+}

@@ -1,0 +1,151 @@
+@{
+    Layout = null;
+    bool success = ViewBag.Success == true;
+    string actionName = ViewBag.ActionName as string ?? "Visitor Scan";
+    string message = ViewBag.Message as string ?? "";
+    string visitorName = ViewBag.VisitorName as string;
+    string residenceName = ViewBag.ResidenceName as string ?? "DUT Residence";
+    DateTime scanTime = ViewBag.ScanTime is DateTime ? (DateTime)ViewBag.ScanTime : DateTime.Now;
+    bool requiresConfirmation = ViewBag.RequiresConfirmation == true;
+    string qrCode = ViewBag.QrCode as string;
+    string confirmButtonText = ViewBag.ConfirmButtonText as string ?? "Confirm Scan";
+    string confirmButtonClass = ViewBag.ConfirmButtonClass as string ?? "#15803d";
+    string headerColor = success ? "#15803d" : requiresConfirmation ? "#1d4ed8" : "#b91c1c";
+}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@actionName</title>
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            min-height: 100vh;
+            font-family: "Segoe UI", Arial, sans-serif;
+            background: #f3f6fb;
+            color: #172033;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .scan-result {
+            width: 100%;
+            max-width: 460px;
+            background: #ffffff;
+            border: 1px solid #dbe3ef;
+            border-radius: 12px;
+            box-shadow: 0 18px 40px rgba(23, 32, 51, 0.14);
+            overflow: hidden;
+        }
+
+        .scan-header {
+            background: @headerColor;
+            color: #ffffff;
+            padding: 24px;
+            text-align: center;
+        }
+
+        .scan-icon {
+            width: 58px;
+            height: 58px;
+            border: 2px solid rgba(255, 255, 255, 0.8);
+            border-radius: 50%;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 34px;
+            line-height: 1;
+            margin-bottom: 12px;
+        }
+
+        h1 {
+            font-size: 24px;
+            margin: 0;
+        }
+
+        .scan-body {
+            padding: 24px;
+        }
+
+        .message {
+            font-size: 17px;
+            font-weight: 600;
+            margin-bottom: 18px;
+        }
+
+        .detail {
+            border-top: 1px solid #e5eaf2;
+            padding-top: 14px;
+            margin-top: 14px;
+            font-size: 14px;
+            color: #536078;
+        }
+
+        .detail strong {
+            color: #172033;
+        }
+
+        .confirm-form {
+            margin-top: 22px;
+        }
+
+        .confirm-button {
+            width: 100%;
+            border: 0;
+            border-radius: 10px;
+            background: @confirmButtonClass;
+            color: #ffffff;
+            padding: 15px 18px;
+            font-size: 17px;
+            font-weight: 700;
+            cursor: pointer;
+            box-shadow: 0 10px 20px rgba(29, 78, 216, 0.22);
+        }
+
+        .confirm-note {
+            margin-top: 12px;
+            font-size: 13px;
+            color: #536078;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <main class="scan-result">
+        <section class="scan-header">
+            <div class="scan-icon">@Html.Raw(success ? "&check;" : requiresConfirmation ? "&#8594;" : "!")</div>
+            <h1>@actionName</h1>
+        </section>
+
+        <section class="scan-body">
+            <div class="message">@message</div>
+
+            @if (!string.IsNullOrWhiteSpace(visitorName))
+            {
+                <div class="detail"><strong>Visitor:</strong> @visitorName</div>
+            }
+
+            <div class="detail"><strong>Residence:</strong> @residenceName</div>
+            <div class="detail"><strong>Scan time:</strong> @scanTime.ToString("dd MMM yyyy HH:mm")</div>
+
+            @if (requiresConfirmation && !string.IsNullOrWhiteSpace(qrCode))
+            {
+                using (Html.BeginForm("ConfirmScan", "Visitor", FormMethod.Post, new { @class = "confirm-form" }))
+                {
+                    @Html.AntiForgeryToken()
+                    @Html.Hidden("qrCode", qrCode)
+                    <button type="submit" class="confirm-button">@confirmButtonText</button>
+                }
+                <div class="confirm-note">This confirmation must be completed by the visitor on their phone.</div>
+            }
+        </section>
+    </main>
+</body>
+</html>

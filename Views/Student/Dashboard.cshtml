@@ -1,0 +1,445 @@
+﻿@model DUTResManagementSystem.ViewModels.StudentDashboardViewModel
+
+@{
+    ViewBag.Title = "Student Dashboard";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<!-- Page Header -->
+<div class="page-header">
+    <div>
+        <h1><i class="fas fa-tachometer-alt me-2" style="color:var(--primary)"></i>Student Dashboard</h1>
+        <div class="breadcrumb-text">
+            Welcome back, <strong style="color:var(--text-primary)">@Model.Student.FirstName</strong>
+            <span style="color:var(--text-muted);margin:0 0.5rem">·</span>
+            <span style="color:var(--text-muted)">@Model.Student.StudentNumber</span>
+        </div>
+    </div>
+    <div class="d-flex align-items-center gap-2 flex-wrap">
+        <span class="badge" style="background:var(--primary-light);color:var(--primary);border:1px solid rgba(59,130,246,0.3);padding:0.4rem 0.75rem;font-size:0.78rem">
+            @Model.Student.Faculty
+        </span>
+        <span class="badge" style="background:var(--bg-elevated);color:var(--text-secondary);border:1px solid var(--border);padding:0.4rem 0.75rem;font-size:0.78rem">
+            Year @Model.Student.YearOfStudy
+        </span>
+    </div>
+</div>
+
+<!-- Stat Cards -->
+<div class="row g-3 mb-4">
+    <div class="col-xl-3 col-md-6">
+        <div class="stat-card">
+            <div class="stat-icon" style="background:rgba(59,130,246,0.15);color:var(--primary)">
+                <i class="fas fa-tools"></i>
+            </div>
+            <div>
+                <div class="stat-num">@Model.MaintenanceRequests.Count</div>
+                <div class="stat-label">Maintenance Requests</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-xl-3 col-md-6">
+        <div class="stat-card">
+            <div class="stat-icon" style="background:rgba(34,197,94,0.15);color:#22c55e">
+                <i class="fas fa-bullhorn"></i>
+            </div>
+            <div>
+                <div class="stat-num">@Model.Announcements.Count</div>
+                <div class="stat-label">Active Announcements</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-xl-3 col-md-6">
+        <div class="stat-card">
+            <div class="stat-icon" style="background:rgba(245,158,11,0.15);color:#f59e0b">
+                <i class="fas fa-clock"></i>
+            </div>
+            <div>
+                <div class="stat-num">@Model.MaintenanceRequests.Count(m => m.Status == "Pending")</div>
+                <div class="stat-label">Pending Requests</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-xl-3 col-md-6">
+        <div class="stat-card">
+            <div class="stat-icon" style="background:rgba(16,185,129,0.15);color:#10b981">
+                <i class="fas fa-home"></i>
+            </div>
+            <div>
+                @if (Model.Residence == null)
+                {
+                    <div class="stat-num" style="font-size:0.9rem;color:#f87171">Not Allocated</div>
+                    <div class="stat-label">Residence &amp; Room</div>
+                }
+                else if (Model.Student.Room == null)
+                {
+                    <div class="stat-num" style="font-size:0.9rem;color:#22c55e">@Model.Residence.Name</div>
+                    <div class="stat-label" style="color:#f59e0b"><i class="fas fa-clock me-1"></i>No room yet</div>
+                }
+                else
+                {
+                    <div class="stat-num" style="font-size:0.9rem;color:#22c55e">@Model.Residence.Name</div>
+                    <div class="stat-label"><i class="fas fa-door-open me-1"></i>Room @Model.Student.Room.RoomNumber</div>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Quick Actions -->
+<div class="card mb-4">
+    <div class="card-header">
+        <i class="fas fa-bolt me-2" style="color:var(--primary)"></i>Quick Actions
+    </div>
+    <div class="card-body">
+        <div class="row g-3">
+            <div class="col-md-3 col-sm-6">
+                <a href="@Url.Action("ReportMaintenance", "Student")" class="action-card">
+                    <div class="action-card-icon" style="background:rgba(59,130,246,0.15);color:var(--primary)">
+                        <i class="fas fa-tools"></i>
+                    </div>
+                    <h6>Report Maintenance</h6>
+                    <p>Report facility issues</p>
+                </a>
+            </div>
+            <div class="col-md-3 col-sm-6">
+                <a href="@Url.Action("MyRoomChangeRequests", "Student")" class="action-card">
+                    <div class="action-card-icon" style="background:rgba(245,158,11,0.15);color:#f59e0b">
+                        <i class="fas fa-exchange-alt"></i>
+                    </div>
+                    <h6>Room Change</h6>
+                    <p>Request a room change</p>
+                </a>
+            </div>
+            <div class="col-md-3 col-sm-6">
+                <a href="@Url.Action("Announcements", "Student")" class="action-card">
+                    <div class="action-card-icon" style="background:rgba(34,197,94,0.15);color:#22c55e">
+                        <i class="fas fa-bullhorn"></i>
+                    </div>
+                    <h6>Announcements</h6>
+                    <p>View all announcements</p>
+                </a>
+            </div>
+            <div class="col-md-3 col-sm-6">
+                <a href="@Url.Action("Maintenance", "Student")" class="action-card">
+                    <div class="action-card-icon" style="background:rgba(59,130,246,0.15);color:var(--primary)">
+                        <i class="fas fa-list-alt"></i>
+                    </div>
+                    <h6>My Requests</h6>
+                    <p>View maintenance history</p>
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Recent Content -->
+<div class="row g-3">
+
+    <!-- Recent Announcements -->
+    <div class="col-md-6">
+        <div class="card h-100">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <span><i class="fas fa-bullhorn me-2" style="color:var(--primary)"></i>Recent Announcements</span>
+                <a href="@Url.Action("Announcements", "Student")" class="btn btn-sm btn-outline-primary">View All</a>
+            </div>
+            <div class="card-body p-0">
+                @if (Model.Announcements.Any())
+                {
+                    foreach (var a in Model.Announcements.Take(3))
+                    {
+                        string pc = a.Priority == "Emergency" ? "danger" : a.Priority == "Important" ? "warning" : "info";
+                        string iconColor = a.Priority == "Emergency" ? "#ef4444" : a.Priority == "Important" ? "#f59e0b" : "var(--primary)";
+                        string badgeBg = a.Priority == "Emergency" ? "rgba(239,68,68,0.15)" : a.Priority == "Important" ? "rgba(245,158,11,0.15)" : "rgba(59,130,246,0.15)";
+                        string badgeColor = a.Priority == "Emergency" ? "#ef4444" : a.Priority == "Important" ? "#f59e0b" : "var(--primary)";
+                        <div class="d-flex align-items-start gap-3 p-3" style="border-bottom:1px solid var(--border-light)">
+                            <div style="width:8px;height:8px;border-radius:50%;background:@iconColor;margin-top:6px;flex-shrink:0"></div>
+                            <div class="flex-grow-1">
+                                <div class="d-flex justify-content-between align-items-start">
+                                    <div style="font-weight:600;color:var(--text-primary);font-size:0.88rem">@a.Title</div>
+                                    <span class="badge ms-2" style="background:@badgeBg;color:@badgeColor;border:1px solid @badgeColor;font-size:0.7rem;flex-shrink:0">@a.Priority</span>
+                                </div>
+                                <div style="font-size:0.78rem;color:var(--text-secondary);margin-top:0.2rem">
+                                    @(a.Content.Length > 80 ? a.Content.Substring(0, 80) + "..." : a.Content)
+                                </div>
+                                <div style="font-size:0.72rem;color:var(--text-muted);margin-top:0.3rem">
+                                    @string.Format("{0:dd MMM yyyy}", a.DatePosted)
+                                    @if (a.Staff != null)
+                                    {<span> · @a.Staff.FirstName @a.Staff.LastName</span>}
+                                </div>
+                            </div>
+                        </div>
+                    }
+                }
+                else
+                {
+                    <div class="text-center py-5" style="color:var(--text-muted)">
+                        <i class="fas fa-bullhorn fa-3x mb-3"></i>
+                        <p class="mb-0">No announcements available</p>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Maintenance Requests -->
+    <div class="col-md-6">
+        <div class="card h-100">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <span><i class="fas fa-tools me-2" style="color:#f59e0b"></i>My Maintenance Requests</span>
+                <a href="@Url.Action("Maintenance", "Student")" class="btn btn-sm btn-outline-primary">View All</a>
+            </div>
+            <div class="card-body p-0">
+                @if (Model.MaintenanceRequests.Any())
+                {
+                    foreach (var r in Model.MaintenanceRequests.Take(3))
+                    {
+                        string sc = r.Status == "Resolved" ? "#22c55e" : r.Status == "In Progress" ? "var(--primary)" : "#f59e0b";
+                        string sb = r.Status == "Resolved" ? "success" : r.Status == "In Progress" ? "primary" : "warning";
+                        string sbBg = r.Status == "Resolved" ? "rgba(34,197,94,0.15)" : r.Status == "In Progress" ? "rgba(59,130,246,0.15)" : "rgba(245,158,11,0.15)";
+                        string sbColor = r.Status == "Resolved" ? "#22c55e" : r.Status == "In Progress" ? "var(--primary)" : "#f59e0b";
+                        <div class="d-flex align-items-start gap-3 p-3" style="border-bottom:1px solid var(--border-light)">
+                            <div style="width:8px;height:8px;border-radius:50%;background:@sc;margin-top:6px;flex-shrink:0"></div>
+                            <div class="flex-grow-1">
+                                <div class="d-flex justify-content-between align-items-start">
+                                    <div style="font-size:0.78rem;color:var(--text-muted)">@string.Format("{0:dd MMM yyyy}", r.DateReported)</div>
+                                    <span class="badge ms-2" style="background:@sbBg;color:@sbColor;border:1px solid @sbColor;font-size:0.7rem;flex-shrink:0">@r.Status</span>
+                                </div>
+                                <div style="font-size:0.88rem;color:var(--text-secondary);margin-top:0.2rem">
+                                    @(r.IssueDescription.Length > 80 ? r.IssueDescription.Substring(0, 80) + "..." : r.IssueDescription)
+                                </div>
+                                @if (r.DateResolved.HasValue)
+                                {
+                                    <div style="font-size:0.72rem;color:#22c55e;margin-top:0.3rem">
+                                        <i class="fas fa-check me-1"></i>Resolved: @string.Format("{0:dd MMM yyyy}", r.DateResolved.Value)
+                                    </div>
+                                }
+                            </div>
+                        </div>
+                    }
+                }
+                else
+                {
+                    <div class="text-center py-5" style="color:var(--text-muted)">
+                        <i class="fas fa-tools fa-3x mb-3"></i>
+                        <p class="mb-2">No maintenance requests yet</p>
+                        <a href="@Url.Action("ReportMaintenance", "Student")" class="btn btn-sm btn-primary">Report an Issue</a>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- My Room Details — only shown if student has a room assigned -->
+@if (Model.Student.Room != null)
+{
+    <div class="row g-3 mt-2">
+        <div class="col-md-6">
+            <div class="card" style="border-color:rgba(59,130,246,0.2)!important">
+                <div class="card-header" style="border-color:rgba(59,130,246,0.2)!important">
+                    <i class="fas fa-door-open me-2" style="color:var(--primary)"></i>My Room
+                </div>
+                <div class="card-body">
+                    <div class="row g-3">
+                        <div class="col-6">
+                            <div style="font-size:0.72rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.05em;font-weight:600;margin-bottom:0.25rem">Room Number</div>
+                            <div style="font-size:1.4rem;font-weight:700;color:var(--text-primary)">@Model.Student.Room.RoomNumber</div>
+                        </div>
+                        <div class="col-6">
+                            <div style="font-size:0.72rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.05em;font-weight:600;margin-bottom:0.25rem">Room Type</div>
+                            <div style="font-size:1.4rem;font-weight:700;color:var(--text-primary)">@Model.Student.Room.RoomType</div>
+                        </div>
+                        <div class="col-6">
+                            <div style="font-size:0.72rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.05em;font-weight:600;margin-bottom:0.25rem">Floor</div>
+                            <div style="color:var(--text-secondary);font-weight:500">@(Model.Student.Room.Floor.HasValue ? "Floor " + Model.Student.Room.Floor : "Not specified")</div>
+                        </div>
+                        <div class="col-6">
+                            <div style="font-size:0.72rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.05em;font-weight:600;margin-bottom:0.25rem">Capacity</div>
+                            <div style="color:var(--text-secondary);font-weight:500">@Model.Student.Room.Capacity bed(s)</div>
+                        </div>
+                        <div class="col-6">
+                            <div style="font-size:0.72rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.05em;font-weight:600;margin-bottom:0.25rem">Gender Policy</div>
+                            <span class="badge" style="background:@(Model.Student.Room.Gender == "Male" ? "rgba(59,130,246,0.15)" : Model.Student.Room.Gender == "Female" ? "rgba(236,72,153,0.15)" : "rgba(16,185,129,0.15)");color:@(Model.Student.Room.Gender == "Male" ? "var(--primary)" : Model.Student.Room.Gender == "Female" ? "#ec4899" : "#22c55e");border:1px solid @(Model.Student.Room.Gender == "Male" ? "var(--primary)" : Model.Student.Room.Gender == "Female" ? "#ec4899" : "#22c55e")">
+                                @Model.Student.Room.Gender
+                            </span>
+                        </div>
+                        <div class="col-6">
+                            <div style="font-size:0.72rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.05em;font-weight:600;margin-bottom:0.25rem">Residence</div>
+                            <div style="color:#22c55e;font-weight:600">@Model.Residence.Name</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+<style>
+    /* Stat Cards */
+    .stat-card {
+        background: var(--bg-card) !important;
+        border: 1px solid var(--border-color) !important;
+        border-radius: 12px;
+        padding: 1.25rem;
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        transition: transform 0.2s, border-color 0.2s;
+    }
+
+        .stat-card:hover {
+            transform: translateY(-2px);
+            border-color: var(--primary) !important;
+        }
+
+    .stat-num {
+        font-family: 'Roboto', sans-serif;
+        font-size: 1.8rem;
+        font-weight: 700;
+        color: var(--text-primary);
+        line-height: 1;
+    }
+
+    .stat-label {
+        font-size: 0.78rem;
+        color: var(--text-muted);
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        margin-top: 0.2rem;
+    }
+
+    .stat-icon {
+        width: 52px;
+        height: 52px;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.4rem;
+        flex-shrink: 0;
+    }
+
+    /* Action Cards */
+    .action-card {
+        background: var(--bg-elevated) !important;
+        border: 1px solid var(--border-color) !important;
+        border-radius: 12px;
+        padding: 1rem;
+        text-align: center;
+        text-decoration: none;
+        color: var(--text-secondary);
+        display: block;
+        transition: all 0.2s;
+    }
+
+        .action-card:hover {
+            border-color: var(--primary) !important;
+            background: var(--primary-light) !important;
+            transform: translateY(-3px);
+            color: var(--text-primary);
+        }
+
+    .action-card-icon {
+        width: 48px;
+        height: 48px;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.3rem;
+        margin: 0 auto 0.75rem;
+    }
+
+    .action-card h6 {
+        font-weight: 700;
+        color: var(--text-primary);
+        margin-bottom: 0.3rem;
+        font-size: 0.85rem;
+    }
+
+    .action-card p {
+        font-size: 0.7rem;
+        color: var(--text-muted);
+        margin: 0;
+    }
+
+    /* Card */
+    .card {
+        background: var(--bg-card) !important;
+        border: 1px solid var(--border-color) !important;
+        border-radius: 12px !important;
+    }
+
+    .card-header {
+        background: var(--card-header-bg) !important;
+        border-bottom: 1px solid var(--border-light) !important;
+        border-radius: 12px 12px 0 0 !important;
+        padding: 1rem 1.25rem;
+        font-weight: 600;
+        color: var(--text-primary);
+    }
+
+    .card-body {
+        background: var(--bg-card) !important;
+    }
+
+    /* Page Header */
+    .page-header {
+        margin-bottom: 1.5rem;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 1rem;
+    }
+
+        .page-header h1 {
+            font-family: 'Roboto', sans-serif;
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--text-primary);
+            margin: 0;
+        }
+
+    .breadcrumb-text {
+        font-size: 0.85rem;
+        color: var(--text-muted);
+        margin-top: 0.25rem;
+    }
+
+    /* Buttons */
+    .btn-outline-primary {
+        color: var(--primary) !important;
+        border-color: var(--primary) !important;
+    }
+
+        .btn-outline-primary:hover {
+            background: var(--primary) !important;
+            color: white !important;
+        }
+
+    .btn-primary {
+        background: var(--primary) !important;
+        border-color: var(--primary) !important;
+    }
+
+        .btn-primary:hover {
+            background: var(--primary-dark) !important;
+            border-color: var(--primary-dark) !important;
+            transform: translateY(-1px);
+        }
+
+    /* Light mode overrides */
+    [data-theme="light"] .stat-num {
+        color: #1a1a2e;
+    }
+
+    [data-theme="light"] .card-header {
+        color: #1a1a2e;
+    }
+
+    [data-theme="light"] .action-card h6 {
+        color: #1a1a2e;
+    }
+</style>

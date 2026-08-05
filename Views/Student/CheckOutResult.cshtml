@@ -1,0 +1,278 @@
+﻿@{
+    ViewBag.Title = "Check-Out Result";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+
+    string result = ViewBag.Result as string;
+    string message = ViewBag.Message as string;
+    string residence = ViewBag.ResidenceName as string;
+    DateTime? checkOutTime = ViewBag.CheckOutTime as DateTime?;
+    string roomNumber = ViewBag.RoomNumber as string;
+    bool hadRoom = ViewBag.HadRoom ?? false;
+}
+
+<div class="page-header">
+    <div>
+        <h1><i class="fas fa-sign-out-alt me-2" style="color:var(--primary)"></i>Check-Out Result</h1>
+        <div class="breadcrumb-text">
+            @if (!string.IsNullOrEmpty(residence))
+            {
+                <i class="fas fa-building me-1"></i><strong>@residence</strong>
+            }
+        </div>
+    </div>
+    <a href="@Url.Action("Dashboard", "Student")" class="btn btn-secondary btn-sm">
+        <i class="fas fa-home me-1"></i>Go to Dashboard
+    </a>
+</div>
+
+<div class="row justify-content-center">
+    <div class="col-lg-6 col-md-8">
+
+        @if (result == "success")
+        {
+            <!-- SUCCESS - Checked Out -->
+            <div class="card text-center" style="border-color:rgba(59,130,246,0.4)!important">
+                <div class="card-body py-5">
+                    <div style="width:100px;height:100px;border-radius:50%;
+                                background:rgba(59,130,246,0.15);
+                                display:flex;align-items:center;justify-content:center;
+                                margin:0 auto 1.5rem;font-size:3rem;color:var(--primary)">
+                        <i class="fas fa-sign-out-alt"></i>
+                    </div>
+                    <h3 style="color:var(--primary);font-family:'Roboto',sans-serif;font-weight:700;margin-bottom:0.75rem">
+                        Check-Out Successful!
+                    </h3>
+                    <p style="color:var(--text-secondary);font-size:1rem;margin-bottom:1.5rem">@message</p>
+
+                    @if (checkOutTime.HasValue)
+                    {
+                        <div class="mb-4 p-3"
+                             style="background:rgba(59,130,246,0.08);border-radius:10px;
+                                    border:1px solid rgba(59,130,246,0.2)">
+                            <div style="font-size:0.72rem;color:var(--text-muted);text-transform:uppercase;
+                                        font-weight:600;letter-spacing:0.05em;margin-bottom:0.25rem">
+                                Check-Out Time
+                            </div>
+                            <div style="font-size:1.2rem;font-weight:700;color:var(--primary)">
+                                @checkOutTime.Value.ToString("dd MMMM yyyy")
+                            </div>
+                            <div style="font-size:1rem;color:#93c5fd">
+                                @checkOutTime.Value.ToString("HH:mm")
+                            </div>
+                        </div>
+                    }
+
+                    @if (hadRoom && !string.IsNullOrEmpty(roomNumber))
+                    {
+                        <div class="mb-4 p-3"
+                             style="background:rgba(245,158,11,0.08);border-radius:10px;
+                                    border:1px solid rgba(245,158,11,0.2)">
+                            <div style="font-size:0.72rem;color:var(--text-muted);text-transform:uppercase;
+                                        font-weight:600;letter-spacing:0.05em;margin-bottom:0.25rem">
+                                Room Deallocated
+                            </div>
+                            <div style="font-size:1rem;font-weight:700;color:#f59e0b">
+                                Room @roomNumber has been freed up
+                            </div>
+                        </div>
+                    }
+
+                    <div class="alert alert-info mb-4" style="text-align:left">
+                        <i class="fas fa-info-circle me-2"></i>
+                        <strong>What happens next?</strong><br />
+                        @if (hadRoom)
+                        {
+                            <text>Your room has been deallocated. If you need accommodation again, please contact your building manager.</text>
+                        }
+                        else
+                        {
+                            <text>Thank you for using the DUT Residence Management System.</text>
+                        }
+                    </div>
+
+                    <a href="@Url.Action("Dashboard", "Student")"
+                       class="btn btn-primary w-100">
+                        <i class="fas fa-home me-2"></i>Go to My Dashboard
+                    </a>
+                </div>
+            </div>
+        }
+        else if (result == "already")
+        {
+            <!-- ALREADY CHECKED OUT -->
+            <div class="card text-center" style="border-color:rgba(59,130,246,0.4)!important">
+                <div class="card-body py-5">
+                    <div style="width:100px;height:100px;border-radius:50%;
+                                background:rgba(59,130,246,0.15);
+                                display:flex;align-items:center;justify-content:center;
+                                margin:0 auto 1.5rem;font-size:3rem;color:var(--primary)">
+                        <i class="fas fa-info-circle"></i>
+                    </div>
+                    <h3 style="color:var(--primary);font-family:'Roboto',sans-serif;font-weight:700;margin-bottom:0.75rem">
+                        Already Checked Out
+                    </h3>
+                    <p style="color:var(--text-secondary);font-size:1rem;margin-bottom:2rem">@message</p>
+                    <a href="@Url.Action("Dashboard", "Student")"
+                       class="btn btn-secondary w-100">
+                        <i class="fas fa-home me-2"></i>Go to My Dashboard
+                    </a>
+                </div>
+            </div>
+        }
+        else if (result == "error")
+        {
+            <!-- ERROR -->
+            <div class="card text-center" style="border-color:rgba(239,68,68,0.4)!important">
+                <div class="card-body py-5">
+                    <div style="width:100px;height:100px;border-radius:50%;
+                                background:rgba(239,68,68,0.15);
+                                display:flex;align-items:center;justify-content:center;
+                                margin:0 auto 1.5rem;font-size:3rem;color:#ef4444">
+                        <i class="fas fa-times-circle"></i>
+                    </div>
+                    <h3 style="color:#ef4444;font-family:'Roboto',sans-serif;
+                               font-weight:700;margin-bottom:0.75rem">
+                        Check-Out Failed
+                    </h3>
+                    <p style="color:var(--text-secondary);font-size:1rem;margin-bottom:1.5rem">@message</p>
+
+                    <div class="alert alert-danger mb-4" style="text-align:left">
+                        <i class="fas fa-exclamation-circle me-2"></i>
+                        If you believe this is an error, please contact your building manager.
+                    </div>
+
+                    <a href="@Url.Action("Dashboard", "Student")"
+                       class="btn btn-secondary w-100">
+                        <i class="fas fa-home me-2"></i>Go to My Dashboard
+                    </a>
+                </div>
+            </div>
+        }
+        else
+        {
+            <!-- FALLBACK -->
+            <div class="card text-center">
+                <div class="card-body py-5" style="color:var(--text-muted)">
+                    <i class="fas fa-question-circle fa-4x mb-3"></i>
+                    <h5>Something went wrong</h5>
+                    <p>Please try scanning the QR code again.</p>
+                    <a href="@Url.Action("Dashboard", "Student")" class="btn btn-secondary">
+                        <i class="fas fa-home me-2"></i>Go to Dashboard
+                    </a>
+                </div>
+            </div>
+        }
+
+    </div>
+</div>
+
+<style>
+    /* Card Styles */
+    .card {
+        background: var(--bg-card) !important;
+        border: 1px solid var(--border-color) !important;
+        border-radius: 16px !important;
+    }
+
+    .card-body {
+        background: var(--bg-card) !important;
+    }
+
+    /* Page Header */
+    .page-header {
+        margin-bottom: 2rem;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 1rem;
+    }
+
+        .page-header h1 {
+            font-family: 'Roboto', sans-serif;
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--text-primary);
+            margin: 0;
+        }
+
+    .breadcrumb-text {
+        font-size: 0.85rem;
+        color: var(--text-muted);
+        margin-top: 0.25rem;
+    }
+
+    /* Buttons */
+    .btn-primary {
+        background: var(--primary) !important;
+        border-color: var(--primary) !important;
+        padding: 0.75rem;
+        font-weight: 600;
+        border-radius: 8px;
+        transition: all 0.2s ease;
+    }
+
+        .btn-primary:hover {
+            background: var(--primary-dark) !important;
+            border-color: var(--primary-dark) !important;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(59,130,246,0.3);
+        }
+
+    .btn-secondary {
+        background: var(--bg-elevated) !important;
+        border-color: var(--border-color) !important;
+        color: var(--text-primary) !important;
+        padding: 0.75rem;
+        font-weight: 600;
+        border-radius: 8px;
+        transition: all 0.2s ease;
+    }
+
+        .btn-secondary:hover {
+            background: var(--hover-bg) !important;
+            transform: translateY(-1px);
+        }
+
+    /* Alerts */
+    .alert-info {
+        background: rgba(59,130,246,0.1) !important;
+        border: 1px solid rgba(59,130,246,0.2) !important;
+        color: var(--text-primary) !important;
+        border-radius: 12px;
+    }
+
+    [data-theme="light"] .alert-info {
+        background: #d1ecf1 !important;
+        color: #0c5460 !important;
+        border-color: #bee5eb !important;
+    }
+
+    .alert-danger {
+        background: rgba(239,68,68,0.1) !important;
+        border: 1px solid rgba(239,68,68,0.2) !important;
+        color: #ef4444 !important;
+        border-radius: 12px;
+    }
+
+    [data-theme="light"] .alert-danger {
+        background: #f8d7da !important;
+        color: #721c24 !important;
+        border-color: #f5c6cb !important;
+    }
+
+    /* Light mode overrides */
+    [data-theme="light"] .card {
+        box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);
+    }
+
+    [data-theme="light"] .btn-secondary {
+        background: #f8f9fa !important;
+        border-color: #dee2e6 !important;
+        color: #1a1a2e !important;
+    }
+
+        [data-theme="light"] .btn-secondary:hover {
+            background: #e9ecef !important;
+        }
+</style>

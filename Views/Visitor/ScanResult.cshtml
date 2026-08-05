@@ -1,0 +1,259 @@
+@{
+    Layout = null;
+
+    string result = ViewBag.Result as string ?? "error";
+    string message = ViewBag.Message as string ?? "Please try scanning the visitor QR code again.";
+    string visitorName = ViewBag.VisitorName as string ?? "Visitor";
+    string residenceName = ViewBag.ResidenceName as string ?? "DUT Residence";
+    string studentName = ViewBag.StudentName as string ?? "Student host";
+    string roomNumber = ViewBag.RoomNumber as string ?? "Not allocated";
+    string currentStatus = ViewBag.CurrentStatus as string ?? "Unknown";
+    DateTime scanTime = ViewBag.ScanTime is DateTime ? (DateTime)ViewBag.ScanTime : DateTime.Now;
+    DateTime? entryTime = ViewBag.EntryTime as DateTime?;
+    DateTime? exitTime = ViewBag.ExitTime as DateTime?;
+
+    bool isEntry = result == "entry";
+    bool isExit = result == "exit";
+    bool isAlready = result == "already";
+    bool isSuccess = isEntry || isExit;
+    string accent = isEntry ? "#16a34a" : isExit ? "#2563eb" : isAlready ? "#f59e0b" : "#dc2626";
+    string icon = isEntry ? "fa-door-open" : isExit ? "fa-right-from-bracket" : isAlready ? "fa-circle-info" : "fa-triangle-exclamation";
+    string heading = isEntry ? "Entry Logged" : isExit ? "Exit Logged" : isAlready ? "Pass Completed" : "Scan Failed";
+}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@heading - Visitor Scan</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            min-height: 100vh;
+            font-family: "Segoe UI", Arial, sans-serif;
+            background:
+                radial-gradient(circle at top left, rgba(37, 99, 235, 0.16), transparent 34%),
+                linear-gradient(145deg, #f8fafc 0%, #eef2f7 100%);
+            color: #172033;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 18px;
+        }
+
+        .scan-shell {
+            width: 100%;
+            max-width: 480px;
+            background: #ffffff;
+            border: 1px solid #dbe3ef;
+            border-radius: 18px;
+            box-shadow: 0 24px 55px rgba(23, 32, 51, 0.18);
+            overflow: hidden;
+        }
+
+        .scan-header {
+            background: @accent;
+            color: #ffffff;
+            padding: 28px 24px;
+            text-align: center;
+        }
+
+        .scan-icon {
+            width: 76px;
+            height: 76px;
+            border: 2px solid rgba(255, 255, 255, 0.82);
+            border-radius: 50%;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 32px;
+            margin-bottom: 14px;
+            background: rgba(255, 255, 255, 0.12);
+        }
+
+        h1 {
+            margin: 0;
+            font-size: 26px;
+            font-weight: 800;
+        }
+
+        .subtitle {
+            margin-top: 8px;
+            opacity: 0.9;
+            font-size: 14px;
+        }
+
+        .scan-body {
+            padding: 24px;
+        }
+
+        .message {
+            font-size: 17px;
+            font-weight: 650;
+            line-height: 1.45;
+            margin-bottom: 20px;
+        }
+
+        .identity {
+            border: 1px solid #e5eaf2;
+            border-radius: 14px;
+            padding: 16px;
+            margin-bottom: 18px;
+            background: #f8fafc;
+        }
+
+        .identity-name {
+            font-size: 21px;
+            font-weight: 800;
+            margin-bottom: 4px;
+        }
+
+        .identity-meta {
+            color: #64748b;
+            font-size: 14px;
+        }
+
+        .detail-grid {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 10px;
+        }
+
+        .detail {
+            border: 1px solid #e5eaf2;
+            border-radius: 12px;
+            padding: 12px;
+            background: #ffffff;
+        }
+
+        .detail-label {
+            color: #64748b;
+            font-size: 11px;
+            font-weight: 750;
+            letter-spacing: 0.05em;
+            text-transform: uppercase;
+            margin-bottom: 5px;
+        }
+
+        .detail-value {
+            font-size: 14px;
+            font-weight: 750;
+            color: #172033;
+            word-break: break-word;
+        }
+
+        .timeline {
+            margin-top: 18px;
+            border-radius: 14px;
+            border: 1px solid rgba(37, 99, 235, 0.18);
+            background: rgba(37, 99, 235, 0.05);
+            padding: 14px;
+        }
+
+        .timeline-row {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 14px;
+            color: #475569;
+            padding: 7px 0;
+        }
+
+        .dot {
+            width: 11px;
+            height: 11px;
+            border-radius: 50%;
+            background: #cbd5e1;
+            flex: 0 0 11px;
+        }
+
+        .dot.active {
+            background: @accent;
+            box-shadow: 0 0 0 5px rgba(37, 99, 235, 0.12);
+        }
+
+        .footer-note {
+            margin-top: 18px;
+            color: #64748b;
+            font-size: 13px;
+            text-align: center;
+        }
+
+        @@media (max-width: 430px) {
+            .detail-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .scan-header {
+                padding: 24px 18px;
+            }
+
+            .scan-body {
+                padding: 18px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <main class="scan-shell">
+        <section class="scan-header">
+            <div class="scan-icon">
+                <i class="fas @icon"></i>
+            </div>
+            <h1>@heading</h1>
+            <div class="subtitle">DUT visitor movement gate pass</div>
+        </section>
+
+        <section class="scan-body">
+            <div class="message">@message</div>
+
+            @if (isSuccess || isAlready)
+            {
+                <div class="identity">
+                    <div class="identity-name">@visitorName</div>
+                    <div class="identity-meta">Visiting @studentName · Room @roomNumber</div>
+                </div>
+
+                <div class="detail-grid">
+                    <div class="detail">
+                        <div class="detail-label">Residence</div>
+                        <div class="detail-value">@residenceName</div>
+                    </div>
+                    <div class="detail">
+                        <div class="detail-label">Current Status</div>
+                        <div class="detail-value">@currentStatus</div>
+                    </div>
+                    <div class="detail">
+                        <div class="detail-label">Entry Time</div>
+                        <div class="detail-value">@(entryTime.HasValue ? entryTime.Value.ToString("dd MMM HH:mm") : "Not logged")</div>
+                    </div>
+                    <div class="detail">
+                        <div class="detail-label">Exit Time</div>
+                        <div class="detail-value">@(exitTime.HasValue ? exitTime.Value.ToString("dd MMM HH:mm") : "Not logged")</div>
+                    </div>
+                </div>
+
+                <div class="timeline">
+                    <div class="timeline-row">
+                        <span class="dot @(entryTime.HasValue ? "active" : "")"></span>
+                        <span>Entry scan @(entryTime.HasValue ? "completed" : "pending")</span>
+                    </div>
+                    <div class="timeline-row">
+                        <span class="dot @(exitTime.HasValue ? "active" : "")"></span>
+                        <span>Exit scan @(exitTime.HasValue ? "completed" : "pending")</span>
+                    </div>
+                </div>
+            }
+
+            <div class="footer-note">
+                Scan time: @scanTime.ToString("dd MMM yyyy HH:mm") · No visitor login required
+            </div>
+        </section>
+    </main>
+</body>
+</html>

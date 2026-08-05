@@ -1,0 +1,393 @@
+﻿@model List<DUTResManagementSystem.Models.ResidenceChangeRequest>
+
+@{
+    ViewBag.Title = "My Residence Change Requests";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+
+    var student = ViewBag.Student as DUTResManagementSystem.Models.Student;
+    var currentResidence = ViewBag.CurrentResidence as DUTResManagementSystem.Models.Residence;
+}
+
+<div class="page-header">
+    <div>
+        <h1><i class="fas fa-exchange-alt me-2" style="color:var(--primary)"></i>My Residence Change Requests</h1>
+        <div class="breadcrumb-text">Track your residence change request history</div>
+    </div>
+    @{
+        bool hasPending = Model.Any(r => r.Status == "Pending");
+    }
+    @if (!hasPending)
+    {
+        <a href="@Url.Action("ResidenceChangeRequest","Student")" class="btn btn-primary btn-sm">
+            <i class="fas fa-plus me-1"></i>New Request
+        </a>
+    }
+</div>
+
+@if (TempData["SuccessMessage"] != null)
+{
+    <div class="alert alert-success alert-dismissible fade show mb-3">
+        <i class="fas fa-check-circle me-2"></i>@TempData["SuccessMessage"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+}
+@if (TempData["ErrorMessage"] != null)
+{
+    <div class="alert alert-danger alert-dismissible fade show mb-3">
+        <i class="fas fa-exclamation-circle me-2"></i>@TempData["ErrorMessage"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+}
+
+<!-- Current Residence Status -->
+<div class="row g-3 mb-4">
+    <div class="col-md-4">
+        <div class="stat-card">
+            <div class="stat-icon" style="background:rgba(59,130,246,0.15);color:var(--primary)">
+                <i class="fas fa-building"></i>
+            </div>
+            <div>
+                <div class="stat-num" style="font-size:0.95rem">
+                    @(currentResidence?.Name ?? "Not Allocated")
+                </div>
+                <div class="stat-label">Current Residence</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="stat-card">
+            <div class="stat-icon" style="background:rgba(245,158,11,0.15);color:#f59e0b">
+                <i class="fas fa-clock"></i>
+            </div>
+            <div>
+                <div class="stat-num">@Model.Count(r => r.Status == "Pending")</div>
+                <div class="stat-label">Pending Requests</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="stat-card">
+            <div class="stat-icon" style="background:rgba(239,68,68,0.15);color:#ef4444">
+                <i class="fas fa-history"></i>
+            </div>
+            <div>
+                <div class="stat-num">@Model.Count</div>
+                <div class="stat-label">Total Requests</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Pending Request Banner -->
+@if (hasPending)
+{
+    <div class="alert alert-warning mb-4">
+        <i class="fas fa-clock me-2"></i>
+        <strong>You have a pending request.</strong>
+        You cannot submit another request until the admin reviews this one.
+    </div>
+}
+
+<!-- Requests List -->
+@if (Model.Any())
+{
+    foreach (var request in Model)
+    {
+        string bc = request.Status == "Approved" ? "success"
+                  : request.Status == "Declined" ? "danger"
+                  : "warning";
+        string borderHex = request.Status == "Approved" ? "rgba(34,197,94,0.3)"
+                         : request.Status == "Declined" ? "rgba(239,68,68,0.3)"
+                         : "rgba(245,158,11,0.3)";
+        string statusColor = request.Status == "Approved" ? "#22c55e"
+                           : request.Status == "Declined" ? "#ef4444"
+                           : "#f59e0b";
+        string statusBg = request.Status == "Approved" ? "rgba(34,197,94,0.15)"
+                        : request.Status == "Declined" ? "rgba(239,68,68,0.15)"
+                        : "rgba(245,158,11,0.15)";
+        bool isPending = request.Status == "Pending";
+
+        <div class="card mb-4" style="border-color:@borderHex!important">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <div>
+                    <div style="font-weight:700;color:var(--text-primary)">
+                        <i class="fas fa-exchange-alt me-2" style="color:@statusColor"></i>
+                        Residence Change Request
+                    </div>
+                    <div style="font-size:0.75rem;color:var(--text-muted);margin-top:0.2rem">
+                        Submitted: @request.DateRequested.ToString("dd MMM yyyy HH:mm")
+                    </div>
+                </div>
+                <span class="badge" style="background:@statusBg;color:@statusColor;border:1px solid @statusColor;font-size:0.85rem;padding:0.4rem 0.75rem">
+                    @if (isPending)
+                    {<i class="fas fa-clock me-1"></i>}
+                    @if (request.Status == "Approved")
+                    {<i class="fas fa-check me-1"></i>}
+                    @if (request.Status == "Declined")
+                    {<i class="fas fa-times me-1"></i>}
+                    @request.Status
+                </span>
+            </div>
+            <div class="card-body">
+                <div class="row g-3 mb-3">
+                    <div class="col-md-6">
+                        <div style="font-size:0.72rem;color:var(--text-muted);text-transform:uppercase;
+                                    font-weight:600;margin-bottom:0.25rem">From Residence</div>
+                        <div style="font-weight:600;color:var(--text-primary)">
+                            @(request.CurrentResidence?.Name ?? "—")
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div style="font-size:0.72rem;color:var(--text-muted);text-transform:uppercase;
+                                    font-weight:600;margin-bottom:0.25rem">Status</div>
+                        <div style="font-weight:600;color:@statusColor">@request.Status</div>
+                    </div>
+                </div>
+
+                <div class="mb-3">
+                    <div style="font-size:0.72rem;color:var(--text-muted);text-transform:uppercase;
+                                font-weight:600;margin-bottom:0.25rem">Your Reason</div>
+                    <div style="background:var(--bg-elevated);border-radius:8px;
+                                padding:0.75rem;color:var(--text-secondary);font-size:0.88rem;line-height:1.6;
+                                border:1px solid var(--border-light)">
+                        @request.Reason
+                    </div>
+                </div>
+
+                @if (!string.IsNullOrEmpty(request.DocumentPath))
+                {
+                    <div class="mb-3">
+                        <div style="font-size:0.72rem;color:var(--text-muted);text-transform:uppercase;
+                                    font-weight:600;margin-bottom:0.25rem">Supporting Document</div>
+                        <a href="@request.DocumentPath" target="_blank" class="btn btn-sm btn-outline-primary">
+                            <i class="fas fa-file me-1"></i>View Document
+                        </a>
+                    </div>
+                }
+
+                @if (!isPending)
+                {
+                    <div style="background:var(--bg-elevated);border-radius:10px;
+                                padding:1rem;border:1px solid var(--border-light);margin-top:0.5rem">
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <div style="font-size:0.72rem;color:var(--text-muted);text-transform:uppercase;
+                                            font-weight:600;margin-bottom:0.25rem">Reviewed On</div>
+                                <div style="color:var(--text-secondary)">
+                                    @request.DateReviewed
+                                </div>
+                                @if (request.ReviewedBy != null)
+                                {
+                                    <div style="font-size:0.75rem;color:var(--text-muted);margin-top:0.2rem">
+                                        by @request.ReviewedBy.FirstName @request.ReviewedBy.LastName
+                                    </div>
+                                }
+                            </div>
+                            @if (!string.IsNullOrEmpty(request.AdminFeedback))
+                            {
+                                <div class="col-md-6">
+                                    <div style="font-size:0.72rem;color:var(--text-muted);text-transform:uppercase;
+                                                font-weight:600;margin-bottom:0.25rem">Admin Feedback</div>
+                                    <div class="alert" style="background:@statusBg;border:1px solid @statusColor;color:var(--text-primary);padding:0.75rem;border-radius:8px;font-size:0.85rem">
+                                        @request.AdminFeedback
+                                    </div>
+                                </div>
+                            }
+                        </div>
+
+                        @if (request.Status == "Approved")
+                        {
+                            <div class="mt-3 pt-3"
+                                 style="border-top:1px solid var(--border-light);
+                                        color:#86efac;font-size:0.85rem">
+                                <i class="fas fa-info-circle me-2"></i>
+                                You have been deallocated from your previous residence.
+                                Please wait for the admin to allocate you to your new residence.
+                                You will receive a notification when this is done.
+                            </div>
+                        }
+                    </div>
+                }
+            </div>
+        </div>
+    }
+}
+else
+{
+    <div class="card">
+        <div class="card-body text-center py-5" style="color:var(--text-muted)">
+            <i class="fas fa-exchange-alt fa-3x mb-3"></i>
+            <h5>No residence change requests yet</h5>
+            <p>You have not submitted any residence change requests.</p>
+            <a href="@Url.Action("ResidenceChangeRequest","Student")" class="btn btn-primary mt-2">
+                <i class="fas fa-plus me-1"></i>Submit a Request
+            </a>
+        </div>
+    </div>
+}
+
+<style>
+    /* Stat Cards */
+    .stat-card {
+        background: var(--bg-card) !important;
+        border: 1px solid var(--border-color) !important;
+        border-radius: 12px;
+        padding: 1.25rem;
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        transition: transform 0.2s, border-color 0.2s;
+    }
+
+        .stat-card:hover {
+            transform: translateY(-2px);
+            border-color: var(--primary) !important;
+        }
+
+    .stat-num {
+        font-family: 'Roboto', sans-serif;
+        font-size: 1.8rem;
+        font-weight: 700;
+        color: var(--text-primary);
+        line-height: 1;
+    }
+
+    .stat-label {
+        font-size: 0.78rem;
+        color: var(--text-muted);
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        margin-top: 0.2rem;
+    }
+
+    .stat-icon {
+        width: 52px;
+        height: 52px;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.4rem;
+        flex-shrink: 0;
+    }
+
+    /* Card */
+    .card {
+        background: var(--bg-card) !important;
+        border: 1px solid var(--border-color) !important;
+        border-radius: 12px !important;
+    }
+
+    .card-header {
+        background: var(--card-header-bg) !important;
+        border-bottom: 1px solid var(--border-light) !important;
+        border-radius: 12px 12px 0 0 !important;
+        padding: 1rem 1.25rem;
+        font-weight: 600;
+        color: var(--text-primary);
+    }
+
+    .card-body {
+        background: var(--bg-card) !important;
+    }
+
+    /* Page Header */
+    .page-header {
+        margin-bottom: 1.5rem;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 1rem;
+    }
+
+        .page-header h1 {
+            font-family: 'Roboto', sans-serif;
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--text-primary);
+            margin: 0;
+        }
+
+    .breadcrumb-text {
+        font-size: 0.85rem;
+        color: var(--text-muted);
+        margin-top: 0.25rem;
+    }
+
+    /* Buttons */
+    .btn-primary {
+        background: var(--primary) !important;
+        border-color: var(--primary) !important;
+    }
+
+        .btn-primary:hover {
+            background: var(--primary-dark) !important;
+            border-color: var(--primary-dark) !important;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(59,130,246,0.3);
+        }
+
+    .btn-outline-primary {
+        color: var(--primary) !important;
+        border-color: var(--primary) !important;
+    }
+
+        .btn-outline-primary:hover {
+            background: var(--primary) !important;
+            color: white !important;
+        }
+
+    /* Alerts */
+    .alert-success {
+        background: rgba(34,197,94,0.1) !important;
+        border: 1px solid rgba(34,197,94,0.2) !important;
+        color: var(--text-primary) !important;
+        border-radius: 12px;
+    }
+
+    [data-theme="light"] .alert-success {
+        background: #d4edda !important;
+        color: #155724 !important;
+        border-color: #c3e6cb !important;
+    }
+
+    .alert-danger {
+        background: rgba(239,68,68,0.1) !important;
+        border: 1px solid rgba(239,68,68,0.2) !important;
+        color: var(--text-primary) !important;
+        border-radius: 12px;
+    }
+
+    [data-theme="light"] .alert-danger {
+        background: #f8d7da !important;
+        color: #721c24 !important;
+        border-color: #f5c6cb !important;
+    }
+
+    .alert-warning {
+        background: rgba(245,158,11,0.1) !important;
+        border: 1px solid rgba(245,158,11,0.2) !important;
+        color: var(--text-primary) !important;
+        border-radius: 12px;
+    }
+
+    [data-theme="light"] .alert-warning {
+        background: #fff3cd !important;
+        color: #856404 !important;
+        border-color: #ffeeba !important;
+    }
+
+    /* Light mode overrides */
+    [data-theme="light"] .stat-num {
+        color: #1a1a2e;
+    }
+
+    [data-theme="light"] .card-header {
+        color: #1a1a2e;
+    }
+
+        [data-theme="light"] .card-header div {
+            color: #1a1a2e !important;
+        }
+</style>

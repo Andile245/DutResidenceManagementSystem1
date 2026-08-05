@@ -1,0 +1,350 @@
+﻿@model List<DUTResManagementSystem.Models.ResidenceCheckIn>
+
+@{
+    ViewBag.Title = "Check-In Log";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<!-- Page Header -->
+<div class="page-header">
+    <div>
+        <h1><i class="fas fa-list-alt me-2" style="color:var(--primary)"></i>Check-In Log</h1>
+        <div class="breadcrumb-text">
+            <i class="fas fa-building me-1"></i>
+            <strong>@ViewBag.ResidenceName</strong> — Full check-in and check-out history
+        </div>
+    </div>
+    <a href="@Url.Action("CheckInManagement", "Staff")" class="btn btn-secondary btn-sm">
+        <i class="fas fa-arrow-left me-1"></i>Back to QR Management
+    </a>
+</div>
+
+<!-- Stat Cards -->
+<div class="row g-3 mb-4">
+    <div class="col-md-4">
+        <div class="stat-card">
+            <div class="stat-icon" style="background:rgba(34,197,94,0.15);color:#22c55e">
+                <i class="fas fa-check-circle"></i>
+            </div>
+            <div>
+                <div class="stat-num">@ViewBag.CheckedInCount</div>
+                <div class="stat-label">Checked In</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="stat-card">
+            <div class="stat-icon" style="background:rgba(139,92,246,0.15);color:#8b5cf6">
+                <i class="fas fa-sign-out-alt"></i>
+            </div>
+            <div>
+                <div class="stat-num">@ViewBag.CheckedOutCount</div>
+                <div class="stat-label">Checked Out</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="stat-card">
+            <div class="stat-icon" style="background:rgba(245,158,11,0.15);color:#f59e0b">
+                <i class="fas fa-clock"></i>
+            </div>
+            <div>
+                <div class="stat-num">@ViewBag.PendingCount</div>
+                <div class="stat-label">QR Issued — Not Scanned Yet</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Log Table -->
+<div class="card">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <span><i class="fas fa-history me-2" style="color:var(--primary)"></i>Activity Log</span>
+        <span class="badge" style="background:var(--primary-light);color:var(--primary)">@Model.Count records</span>
+    </div>
+    <div class="card-body p-0">
+        @if (Model.Any())
+        {
+            <div class="table-responsive">
+                <table class="table mb-0" id="logTable">
+                    <thead>
+                        <tr>
+                            <th>Student</th>
+                            <th>Student #</th>
+                            <th>Gender</th>
+                            <th>QR Generated</th>
+                            <th>Check-In Status</th>
+                            <th>Check-In Time</th>
+                            <th>Check-Out Status</th>
+                            <th>Check-Out Time</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var record in Model)
+                        {
+                            string ciColor = record.HasCheckedIn ? "#22c55e" : "var(--text-muted)";
+                            string coColor = record.HasCheckedOut ? "var(--text-secondary)" : "var(--text-muted)";
+
+                            string genderBg = record.Student?.Gender == "Male" ? "rgba(59,130,246,0.15)" :
+                                             record.Student?.Gender == "Female" ? "rgba(236,72,153,0.15)" :
+                                             "rgba(107,114,128,0.15)";
+                            string genderColor = record.Student?.Gender == "Male" ? "var(--primary)" :
+                                                record.Student?.Gender == "Female" ? "#ec4899" :
+                                                "var(--text-muted)";
+                            <tr>
+                                <td>
+                                    <div style="font-weight:600;color:var(--text-primary);font-size:0.88rem">
+                                        @record.Student.FirstName @record.Student.LastName
+                                    </div>
+                                    <div style="font-size:0.72rem;color:var(--text-muted)">@record.Student.Email</div>
+                                </td>
+                                <td style="color:var(--text-secondary);font-size:0.82rem">
+                                    @record.Student.StudentNumber
+                                </td>
+                                <td>
+                                    <span class="badge" style="background:@genderBg;color:@genderColor;border:1px solid @genderColor">
+                                        @record.Student.Gender
+                                    </span>
+                                </td>
+                                <td style="font-size:0.78rem;color:var(--text-muted)">
+                                    @record.TokenGeneratedAt.ToString("dd MMM yyyy HH:mm")
+                                </td>
+                                <td>
+                                    @if (record.HasCheckedIn)
+                                    {
+                                        <span class="badge" style="background:rgba(34,197,94,0.15);color:#22c55e;border:1px solid rgba(34,197,94,0.3)">
+                                            <i class="fas fa-check me-1"></i>Checked In
+                                        </span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge" style="background:rgba(245,158,11,0.15);color:#f59e0b;border:1px solid rgba(245,158,11,0.3)">
+                                            <i class="fas fa-clock me-1"></i>Not Scanned
+                                        </span>
+                                    }
+                                </td>
+                                <td style="font-size:0.78rem;color:@ciColor">
+                                    @(record.CheckInTime.HasValue
+                                        ? record.CheckInTime.Value.ToString("dd MMM yyyy HH:mm")
+                                        : "—")
+                                </td>
+                                <td>
+                                    @if (record.HasCheckedOut)
+                                    {
+                                        <span class="badge" style="background:rgba(139,92,246,0.15);color:#8b5cf6;border:1px solid rgba(139,92,246,0.3)">
+                                            <i class="fas fa-sign-out-alt me-1"></i>Checked Out
+                                        </span>
+                                    }
+                                    else if (record.HasCheckedIn)
+                                    {
+                                        <span style="color:var(--text-muted);font-size:0.78rem">Still In</span>
+                                    }
+                                    else
+                                    {
+                                        <span style="color:var(--text-muted);font-size:0.78rem">—</span>
+                                    }
+                                </td>
+                                <td style="font-size:0.78rem;color:@coColor">
+                                    @(record.CheckOutTime.HasValue
+                                        ? record.CheckOutTime.Value.ToString("dd MMM yyyy HH:mm")
+                                        : "—")
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+        else
+        {
+            <div class="text-center py-5" style="color:var(--text-muted)">
+                <i class="fas fa-list-alt fa-3x mb-3"></i>
+                <h5>No check-in records yet</h5>
+                <p class="mb-3">Generate QR codes and share them with students to start logging activity.</p>
+                <a href="@Url.Action("CheckInManagement","Staff")" class="btn btn-primary btn-sm">
+                    <i class="fas fa-qrcode me-1"></i>Go to QR Management
+                </a>
+            </div>
+        }
+    </div>
+</div>
+
+<style>
+    /* Stat Cards */
+    .stat-card {
+        background: var(--bg-card) !important;
+        border: 1px solid var(--border-color) !important;
+        border-radius: 12px;
+        padding: 1.25rem;
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        transition: transform 0.2s, border-color 0.2s;
+    }
+
+        .stat-card:hover {
+            transform: translateY(-2px);
+            border-color: var(--primary) !important;
+        }
+
+    .stat-num {
+        font-family: 'Roboto', sans-serif;
+        font-size: 1.8rem;
+        font-weight: 700;
+        color: var(--text-primary);
+        line-height: 1;
+    }
+
+    .stat-label {
+        font-size: 0.78rem;
+        color: var(--text-muted);
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        margin-top: 0.2rem;
+    }
+
+    .stat-icon {
+        width: 52px;
+        height: 52px;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.4rem;
+        flex-shrink: 0;
+    }
+
+    /* Card */
+    .card {
+        background: var(--bg-card) !important;
+        border: 1px solid var(--border-color) !important;
+        border-radius: 12px !important;
+    }
+
+    .card-header {
+        background: var(--card-header-bg) !important;
+        border-bottom: 1px solid var(--border-light) !important;
+        border-radius: 12px 12px 0 0 !important;
+        padding: 1rem 1.25rem;
+        font-weight: 600;
+        color: var(--text-primary);
+    }
+
+    .card-body {
+        background: var(--bg-card) !important;
+    }
+
+    /* Table */
+    .table {
+        color: var(--text-secondary) !important;
+    }
+
+        .table thead th {
+            background: var(--bg-elevated) !important;
+            color: var(--text-primary) !important;
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            border-color: var(--border-light) !important;
+            font-weight: 600;
+        }
+
+        .table tbody tr {
+            border-color: var(--border-light) !important;
+        }
+
+            .table tbody tr:hover {
+                background: var(--table-hover) !important;
+            }
+
+        .table td, .table th {
+            border-color: var(--border-light) !important;
+            color: var(--text-secondary);
+        }
+
+    /* Buttons */
+    .btn-secondary {
+        background: var(--bg-elevated) !important;
+        border-color: var(--border-color) !important;
+        color: var(--text-primary) !important;
+    }
+
+        .btn-secondary:hover {
+            background: var(--hover-bg) !important;
+            transform: translateY(-1px);
+        }
+
+    .btn-primary {
+        background: var(--primary) !important;
+        border-color: var(--primary) !important;
+    }
+
+        .btn-primary:hover {
+            background: var(--primary-dark) !important;
+            border-color: var(--primary-dark) !important;
+            transform: translateY(-1px);
+        }
+
+    /* Badge */
+    .badge {
+        font-weight: 500;
+    }
+
+    /* Page Header */
+    .page-header {
+        margin-bottom: 1.5rem;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 1rem;
+    }
+
+        .page-header h1 {
+            font-family: 'Roboto', sans-serif;
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--text-primary);
+            margin: 0;
+        }
+
+    .breadcrumb-text {
+        font-size: 0.85rem;
+        color: var(--text-muted);
+        margin-top: 0.25rem;
+    }
+
+    /* Light mode overrides */
+    [data-theme="light"] .stat-num {
+        color: #1a1a2e;
+    }
+
+    [data-theme="light"] .card-header {
+        color: #1a1a2e;
+    }
+
+    [data-theme="light"] .table td,
+    [data-theme="light"] .table th {
+        color: #2d3436 !important;
+    }
+</style>
+
+@section Scripts {
+    <script>
+        $(document).ready(function () {
+            $('#logTable').DataTable({
+                pageLength: 25,
+                order: [[5, 'desc']],
+                language: {
+                    search: "Search:",
+                    lengthMenu: "Show _MENU_ entries",
+                    info: "Showing _START_ to _END_ of _TOTAL_ records",
+                    paginate: {
+                        previous: "Previous",
+                        next: "Next"
+                    }
+                }
+            });
+        });
+    </script>
+}
