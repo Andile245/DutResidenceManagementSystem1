@@ -322,12 +322,60 @@ namespace DUTResSystemWebApp.Controllers
             db.SaveChanges(); TempData["Success"] = "Tie decision recorded."; return RedirectToAction("Details", new { id });
         }
 
+        [HttpPost, ValidateAntiForgeryToken]
+        public ActionResult ConfirmResults(int id)
+        {
+            if (!IsAdmin()) return new HttpStatusCodeResult(403);
+            var election = db.ResidenceElections.Find(id); if (election == null) return HttpNotFound();
+            string error;
+            if (!workflow.ConfirmResultsAndActivate(db, election, (int)Session["StaffID"], out error)) { TempData["Error"] = error; return RedirectToAction("Details", new { id }); }
+            db.SaveChanges();
+            TempData["Success"] = "Final results validated. The elected House Committee is now active.";
+            return RedirectToAction("Details", new { id });
+        }
+
+        [HttpPost, ValidateAntiForgeryToken]
+        public ActionResult RecordWinnerIneligibility(int id, int nominationId, string reason)
+        {
+            if (!IsAdmin()) return new HttpStatusCodeResult(403);
+            var election = db.ResidenceElections.Find(id); if (election == null) return HttpNotFound();
+            string error;
+            if (!workflow.RecordWinnerIneligibility(db, election, nominationId, (int)Session["StaffID"], reason, out error)) { TempData["Error"] = error; return RedirectToAction("Review", new { id }); }
+            db.SaveChanges(); TempData["Success"] = "Ineligibility recorded and results recalculated. Validate the replacement result when ready.";
+            return RedirectToAction("Review", new { id });
+        }
+
         public ActionResult Dashboard(int id)
         {
             if (!IsManager()) return new HttpStatusCodeResult(403); workflow.RunDueWorkflows(); var election = db.ResidenceElections.Include(e => e.Residence).FirstOrDefault(e => e.ResidenceElectionID == id); if (election == null) return HttpNotFound();
             if (!IsAdmin() && (int?)Session["ResidenceID"] != election.ResidenceID) return new HttpStatusCodeResult(403);
-            int voters = db.Students.Count(s => s.IsActive && s.ResidenceID == election.ResidenceID); int cast = db.ElectionParticipations.Where(p => p.ResidenceElectionID == id).Select(p => p.StudentID).Distinct().Count();
-            return View(new ElectionDashboardViewModel { Election = election, EligibleVoters = voters, BallotsCast = cast, Nominations = db.ElectionNominations.Count(n => n.ResidenceElectionID == id), ApprovedCandidates = db.ElectionNominations.Count(n => n.ResidenceElectionID == id && n.Status == "Approved"), Turnout = voters == 0 ? 0 : Math.Round((decimal)cast * 100 / voters, 1) });
+            if (election.Status != "Results Published" && election.Status != "Archived") return new HttpStatusCodeResult(400, "Election accountability is available after official results are published.");
+            return View(BuildAccountabilityModel(election));
+        }
+
+        public ActionResult AccountabilityReport(int id)
+        {
+            if (!IsManager()) return new HttpStatusCodeResult(403);
+            var election = db.ResidenceElections.Include(e => e.Residence).FirstOrDefault(e => e.ResidenceElectionID == id); if (election == null) return HttpNotFound();
+            if (!IsAdmin() && (int?)Session["ResidenceID"] != election.ResidenceID) return new HttpStatusCodeResult(403);
+            if (election.Status != "Results Published" && election.Status != "Archived") return new HttpStatusCodeResult(400, "Election accountability is available after official results are published.");
+            return View(BuildAccountabilityModel(election));
+        }
+
+        private ElectionDashboardViewModel BuildAccountabilityModel(ResidenceElection election)
+        {
+            var id = election.ResidenceElectionID;
+            var voters = db.Students.Count(s => s.IsActive && s.ResidenceID == election.ResidenceID);
+            var cast = db.ElectionParticipations.Where(p => p.ResidenceElectionID == id).Select(p => p.StudentID).Distinct().Count();
+            return new ElectionDashboardViewModel
+            {
+                Election = election, EligibleVoters = voters, BallotsCast = cast,
+                Nominations = db.ElectionNominations.Count(n => n.ResidenceElectionID == id),
+                ApprovedCandidates = db.ElectionNominations.Count(n => n.ResidenceElectionID == id && n.Status == "Approved"),
+                Turnout = voters == 0 ? 0 : Math.Round((decimal)cast * 100 / voters, 1),
+                AuditLogs = db.ElectionAuditLogs.Where(a => a.ResidenceElectionID == id).OrderByDescending(a => a.OccurredAt).ToList(),
+                Notifications = db.Notifications.Where(n => n.RelatedID == id && (n.RelatedType == "Election" || n.RelatedType == "ElectionResult")).OrderByDescending(n => n.DateCreated).ToList()
+            };
         }
 
         private Student CurrentStudent() { return Session["StudentID"] == null ? null : db.Students.Find((int)Session["StudentID"]); }

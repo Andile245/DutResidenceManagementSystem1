@@ -46,6 +46,8 @@ namespace DUTResManagementSystem.ViewModels
         public int Nominations { get; set; }
         public int ApprovedCandidates { get; set; }
         public decimal Turnout { get; set; }
+        public List<ElectionAuditLog> AuditLogs { get; set; }
+        public List<Notification> Notifications { get; set; }
     }
     public class BallotViewModel
     {

@@ -85,9 +85,7 @@
             {
                 @Html.AntiForgeryToken()
                 @Html.Hidden("id", Model.RollCall.EmergencyRollCallID)
-                <button class="btn btn-sm btn-danger" type="submit">
-                    <i class="fas fa-lock me-1"></i>Close Roll Call
-                </button>
+                <div class="d-flex flex-column gap-1"><input class="form-control form-control-sm" name="conclusionNotes" placeholder="Conclusion / outstanding-person notes" /><label class="small"><input type="checkbox" name="confirmConclusion" value="true" /> I reviewed all current statuses</label><button class="btn btn-sm btn-danger" type="submit"><i class="fas fa-lock me-1"></i>Conclude Roll Call</button></div>
             }
         }
     </div>
@@ -148,3 +146,8 @@
         </div>
     </div>
 </div>
+
+@if (Model.RollCall.Status == "Concluded")
+{
+    <div class="alert alert-secondary mt-3"><strong>Roll call concluded.</strong> Outstanding/unaccounted people: @Model.RollCall.OutstandingPeopleCount. @if (!string.IsNullOrWhiteSpace(Model.RollCall.ConclusionNotes)) { <span>@Model.RollCall.ConclusionNotes</span> }</div>
+}

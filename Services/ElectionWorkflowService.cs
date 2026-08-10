@@ -25,7 +25,7 @@ namespace DUTResSystemWebApp.Services
         {
             if (election.Status == "Completed")
             {
-                if (now >= election.ResultsPublicationAt) PublishResults(db, election);
+                if (election.ResultsValidatedAt.HasValue && now >= election.ResultsPublicationAt) PublishResults(db, election);
                 return;
             }
             if (election.Status == "Results Published")
@@ -120,9 +120,8 @@ namespace DUTResSystemWebApp.Services
             election.ResultsPublishedAt = null;
             if (!tie)
             {
-                ActivateWinners(db, election);
-                Audit(db, election.ResidenceElectionID, "CommitteeActivated", "Winning candidates have been appointed to the active committee.", "System", null);
-                NotifyWinners(db, election);
+                // Final validation by the Housing Office is required before the
+                // elected roster is made active (UC-E09).
             }
             var voters = db.ElectionParticipations.Where(p => p.ResidenceElectionID == election.ResidenceElectionID).Select(p => p.StudentID).Distinct().Count();
             var eligible = db.Students.Count(s => s.IsActive && s.ResidenceID == election.ResidenceID);
@@ -149,15 +148,55 @@ namespace DUTResSystemWebApp.Services
                 !db.ElectionNominations.Any(n => n.ElectionPositionID == p.ElectionPositionID && n.IsWinner));
             if (!unresolved)
             {
-                // Counting may have already selected winners for other positions
-                // before a tie was detected. Activate all of them once the last
-                // tie is resolved, not only the candidate selected on this request.
-                ActivateWinners(db, election);
-                Audit(db, election.ResidenceElectionID, "CommitteeActivated", "Winning candidates have been appointed to the active committee.", "System", null);
                 election.Status = "Completed";
-                if (DateTime.Now >= election.ResultsPublicationAt) PublishResults(db, election);
             }
             Audit(db, election.ResidenceElectionID, "TieResolved", "Tie resolved for " + position.Name + ".", "Staff", staffId);
+            return true;
+        }
+
+        public bool ConfirmResultsAndActivate(ResContext db, ResidenceElection election, int staffId, out string error)
+        {
+            error = null;
+            if (election.Status != "Completed") { error = "Results can only be validated after counting is complete and all ties are resolved."; return false; }
+            if (election.ResultsValidatedAt.HasValue) { error = "These results have already been validated."; return false; }
+            if (election.HasUnresolvedDisputes) { error = "Results cannot be validated while an election dispute remains unresolved."; return false; }
+
+            var positions = db.ElectionPositions.Where(p => p.ResidenceElectionID == election.ResidenceElectionID).ToList();
+            if (!positions.Any() || positions.Any(p => db.ElectionNominations.Count(n => n.ElectionPositionID == p.ElectionPositionID && n.IsWinner) != p.Seats))
+            { error = "Every committee position must have its final winner(s) before validation."; return false; }
+
+            foreach (var winner in db.ElectionNominations.Where(n => n.ResidenceElectionID == election.ResidenceElectionID && n.IsWinner).ToList())
+            {
+                var eligibility = EvaluateEligibility(db, election, winner.StudentID, winner.ElectionNominationID);
+                if (eligibility.Recommendation == "Not Eligible")
+                {
+                    error = "A winning candidate is no longer eligible: " + eligibility.Reason + " Record the ineligibility and recount before validating results.";
+                    return false;
+                }
+            }
+
+            election.ResultsValidatedAt = DateTime.Now;
+            election.ResultsValidatedByStaffID = staffId;
+            var activation = ActivateWinners(db, election);
+            Audit(db, election.ResidenceElectionID, "ResultsValidated", "Housing Office confirmed final results; all ties and disputes are resolved.", "Staff", staffId);
+            Audit(db, election.ResidenceElectionID, "CommitteeActivated", activation + " elected member(s) activated for residence " + election.ResidenceID + " for term " + TermFor(election) + ".", "System", null);
+            NotifyWinners(db, election);
+            if (DateTime.Now >= election.ResultsPublicationAt) PublishResults(db, election);
+            return true;
+        }
+
+        public bool RecordWinnerIneligibility(ResContext db, ResidenceElection election, int nominationId, int staffId, string reason, out string error)
+        {
+            error = null;
+            if (election.Status != "Completed" || election.ResultsValidatedAt.HasValue) { error = "A winner can only be disqualified before final results are validated."; return false; }
+            var nomination = db.ElectionNominations.FirstOrDefault(n => n.ElectionNominationID == nominationId && n.ResidenceElectionID == election.ResidenceElectionID && n.IsWinner);
+            if (nomination == null) { error = "Choose a current winning candidate."; return false; }
+            nomination.IsWinner = false;
+            nomination.Status = "Disqualified After Voting";
+            nomination.ReviewNote = string.IsNullOrWhiteSpace(reason) ? "Found ineligible after voting." : reason.Trim();
+            Audit(db, election.ResidenceElectionID, "WinnerDisqualified", "Winner disqualified before activation: " + nomination.ReviewNote, "Staff", staffId);
+            election.Status = "Counting";
+            CountAndValidate(db, election);
             return true;
         }
 
@@ -186,6 +225,7 @@ namespace DUTResSystemWebApp.Services
         private void PublishResults(ResContext db, ResidenceElection election)
         {
             if (election.Status == "Results Published" || election.Status == "Archived") return;
+            if (!election.ResultsValidatedAt.HasValue) return;
             election.Status = "Results Published";
             election.ResultsPublishedAt = DateTime.Now;
             Audit(db, election.ResidenceElectionID, "ResultsPublished", "Results published to the residence.", "System", null);
@@ -219,8 +259,19 @@ namespace DUTResSystemWebApp.Services
             return delivery;
         }
 
-        private void ActivateWinners(ResContext db, ResidenceElection election)
+        private int ActivateWinners(ResContext db, ResidenceElection election)
         {
+            var activatedAt = DateTime.Now;
+            var previousAppointments = db.CommitteeAppointments
+                .Where(a => a.ResidenceID == election.ResidenceID && a.IsActive && a.ResidenceElectionID != election.ResidenceElectionID)
+                .ToList();
+            foreach (var previous in previousAppointments)
+            {
+                previous.IsActive = false;
+                previous.MemberStatus = "Former House Committee Member";
+                previous.EndedAt = activatedAt;
+            }
+            var count = 0;
             foreach (var winner in db.ElectionNominations
                 .Where(n => n.ResidenceElectionID == election.ResidenceElectionID && n.IsWinner)
                 .ToList())
@@ -234,10 +285,24 @@ namespace DUTResSystemWebApp.Services
                     {
                         ResidenceElectionID = election.ResidenceElectionID,
                         ElectionPositionID = winner.ElectionPositionID,
-                        StudentID = winner.StudentID
+                        StudentID = winner.StudentID,
+                        ResidenceID = election.ResidenceID,
+                        Term = TermFor(election),
+                        MemberStatus = "Active House Committee Member",
+                        ActivatedAt = activatedAt,
+                        AppointedAt = activatedAt
                     });
+                    count++;
                 }
             }
+            if (previousAppointments.Any())
+                Audit(db, election.ResidenceElectionID, "PreviousCommitteeDeactivated", previousAppointments.Count + " previous committee appointment(s) ended for residence " + election.ResidenceID + ".", "System", null);
+            return count;
+        }
+
+        private static string TermFor(ResidenceElection election)
+        {
+            return election.ResultsPublicationAt.Year + " House Committee term";
         }
 
         public ElectionNotificationDelivery NotifyResidents(ResContext db, ResidenceElection election, string phase)

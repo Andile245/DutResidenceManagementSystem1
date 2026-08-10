@@ -3032,6 +3032,11 @@ namespace DUTResSystemWebApp.Controllers
                 TempData["ErrorMessage"] = "Roll call person not found.";
                 return RedirectToAction("Semester2Operations");
             }
+            if (person.EmergencyRollCall.Status != "Open")
+            {
+                TempData["ErrorMessage"] = "Safety statuses are locked after the emergency roll call has concluded.";
+                return RedirectToAction("EmergencyRollCallDetails", new { id = person.EmergencyRollCallID });
+            }
 
             var allowedStatuses = new[] { "Unknown", "Safe", "Missing", "Outside" };
             person.SafetyStatus = allowedStatuses.Contains(safetyStatus) ? safetyStatus : "Unknown";
@@ -3045,7 +3050,7 @@ namespace DUTResSystemWebApp.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public ActionResult CloseEmergencyRollCall(int id)
+        public ActionResult CloseEmergencyRollCall(int id, string conclusionNotes, bool confirmConclusion)
         {
             var staff = GetLoggedInStaff();
             if (!CanAccessResidenceOperations(staff))
@@ -3059,12 +3064,32 @@ namespace DUTResSystemWebApp.Controllers
                 TempData["ErrorMessage"] = "Roll call not found.";
                 return RedirectToAction("Semester2Operations");
             }
+            if (rollCall.Status != "Open")
+            {
+                TempData["ErrorMessage"] = "This emergency roll call has already been concluded.";
+                return RedirectToAction("EmergencyRollCallDetails", new { id });
+            }
+            if (!confirmConclusion)
+            {
+                TempData["ErrorMessage"] = "Confirm that you have reviewed the current safety statuses before concluding the roll call.";
+                return RedirectToAction("EmergencyRollCallDetails", new { id });
+            }
 
-            rollCall.Status = "Closed";
+            var outstandingCount = db.EmergencyRollCallPeople.Count(p => p.EmergencyRollCallID == id && (p.SafetyStatus == "Unknown" || p.SafetyStatus == "Missing"));
+            if (outstandingCount > 0 && string.IsNullOrWhiteSpace(conclusionNotes))
+            {
+                TempData["ErrorMessage"] = "Record the outstanding or unaccounted-for people in the conclusion notes before closing this roll call.";
+                return RedirectToAction("EmergencyRollCallDetails", new { id });
+            }
+
+            rollCall.Status = "Concluded";
             rollCall.ClosedAt = DateTime.Now;
+            rollCall.ConcludedByStaffID = staff.StaffID;
+            rollCall.ConclusionNotes = string.IsNullOrWhiteSpace(conclusionNotes) ? null : conclusionNotes.Trim();
+            rollCall.OutstandingPeopleCount = outstandingCount;
             db.SaveChanges();
-            TempData["SuccessMessage"] = "Emergency roll call closed.";
-            return RedirectToAction("Semester2Operations");
+            TempData["SuccessMessage"] = "Emergency roll call concluded and final results preserved.";
+            return RedirectToAction("EmergencyRollCallDetails", new { id });
         }
 
         [HttpPost]

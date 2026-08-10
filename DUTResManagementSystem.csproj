@@ -197,8 +197,20 @@
       <DependentUpon>202608021156438_StudentConductWarnings.cs</DependentUpon>
     </Compile>
     <Compile Include="Migrations\202608041957309_ImprovedElectionWorkflow.cs" />
+    <Compile Include="Migrations\202608090900000_ActivateHouseCommittee.cs" />
+    <Compile Include="Migrations\202608090900000_ActivateHouseCommittee.Designer.cs">
+      <DependentUpon>202608090900000_ActivateHouseCommittee.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Migrations\202608091000000_ConcludeEmergencyRollCall.cs" />
+    <Compile Include="Migrations\202608091000000_ConcludeEmergencyRollCall.Designer.cs">
+      <DependentUpon>202608091000000_ConcludeEmergencyRollCall.cs</DependentUpon>
+    </Compile>
     <Compile Include="Migrations\202608041957309_ImprovedElectionWorkflow.Designer.cs">
       <DependentUpon>202608041957309_ImprovedElectionWorkflow.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Migrations\202608101432115_SyncUc08Uc16Model.cs" />
+    <Compile Include="Migrations\202608101432115_SyncUc08Uc16Model.Designer.cs">
+      <DependentUpon>202608101432115_SyncUc08Uc16Model.cs</DependentUpon>
     </Compile>
     <Compile Include="Migrations\Configuration.cs" />
     <Compile Include="Models\Allocation.cs" />
@@ -301,6 +313,7 @@
     <Content Include="Views\Election\Review.cshtml" />
     <Content Include="Views\Election\MyApplication.cshtml" />
     <Content Include="Views\Election\Dashboard.cshtml" />
+    <Content Include="Views\Election\AccountabilityReport.cshtml" />
     <Content Include="Views\Election\EditSchedule.cshtml" />
     <Content Include="Views\Home\About.cshtml" />
     <Content Include="Views\Home\Contact.cshtml" />
@@ -409,6 +422,9 @@
     </EmbeddedResource>
     <EmbeddedResource Include="Migrations\202608041957309_ImprovedElectionWorkflow.resx">
       <DependentUpon>202608041957309_ImprovedElectionWorkflow.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Migrations\202608101432115_SyncUc08Uc16Model.resx">
+      <DependentUpon>202608101432115_SyncUc08Uc16Model.cs</DependentUpon>
     </EmbeddedResource>
   </ItemGroup>
   <PropertyGroup>

@@ -23,6 +23,11 @@ namespace DUTResManagementSystem.Models
         public int CreatedByStaffID { get; set; }
         public DateTime CreatedAt { get; set; } = DateTime.Now;
         public DateTime? ResultsPublishedAt { get; set; }
+        // Final validation is a deliberate Housing Office confirmation. Counting alone
+        // must not replace the current committee roster.
+        public DateTime? ResultsValidatedAt { get; set; }
+        public int? ResultsValidatedByStaffID { get; set; }
+        public bool HasUnresolvedDisputes { get; set; }
         public DateTime? ArchivedAt { get; set; }
         public virtual ICollection<ElectionPosition> Positions { get; set; }
     }
@@ -93,7 +98,13 @@ namespace DUTResManagementSystem.Models
         [Required] public int ElectionPositionID { get; set; }
         [Required] public int StudentID { get; set; }
         [ForeignKey("StudentID")] public virtual Student Student { get; set; }
+        [Required] public int ResidenceID { get; set; }
+        [Required, StringLength(160)] public string Term { get; set; }
+        [Required, StringLength(60)] public string MemberStatus { get; set; } = "Active House Committee Member";
         public bool IsActive { get; set; } = true;
+        // AppointedAt is retained for backwards compatibility; ActivatedAt is the
+        // explicit UC-E09 audit timestamp.
+        public DateTime ActivatedAt { get; set; } = DateTime.Now;
         public DateTime AppointedAt { get; set; } = DateTime.Now;
         public DateTime? EndedAt { get; set; }
     }

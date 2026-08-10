@@ -32,7 +32,10 @@
             }
             @if (canManage)
             {
-                <a class="btn btn-outline-secondary" href="@Url.Action("Dashboard", new { id = Model.ResidenceElectionID })">Analytics</a>
+                if (Model.Status == "Results Published" || Model.Status == "Archived")
+                {
+                    <a class="btn btn-outline-secondary" href="@Url.Action("Dashboard", new { id = Model.ResidenceElectionID })">Review election accountability</a>
+                }
                 <a class="btn btn-outline-secondary" href="@Url.Action("Review", new { id = Model.ResidenceElectionID })">Review applications</a>
             }
             @if (Session["UserType"] as string == "Admin")
@@ -62,6 +65,14 @@
                         <button type="submit" class="btn btn-danger">Resend results</button>
                     }
                 }
+                if (Model.Status == "Completed" && !Model.ResultsValidatedAt.HasValue)
+                {
+                    using (Html.BeginForm("ConfirmResults", "Election", new { id = Model.ResidenceElectionID }, FormMethod.Post, new { @class = "d-inline" }))
+                    {
+                        @Html.AntiForgeryToken()
+                        <button type="submit" class="btn btn-success">Validate results and activate committee</button>
+                    }
+                }
             }
         </div>
     </div>
@@ -70,7 +81,8 @@
     @if (TempData["Error"] != null) { <div class="alert alert-danger">@TempData["Error"]</div> }
     @if (Model.Status == "Scheduled") { <div class="alert alert-info">House Committee applications open on <strong>@Model.NominationOpensAt.ToString("dd MMM yyyy HH:mm")</strong>.</div> }
     @if (Model.Status == "Draft") { <div class="alert alert-secondary">This election is a draft and is not visible to students until it is published.</div> }
-    @if (Model.Status == "Completed") { <div class="alert alert-info">Votes have been counted. Results will be published on <strong>@Model.ResultsPublicationAt.ToString("dd MMM yyyy HH:mm")</strong>.</div> }
+    @if (Model.Status == "Completed" && !Model.ResultsValidatedAt.HasValue) { <div class="alert alert-warning">Votes have been counted. A Housing Office Administrator must validate the results before the committee can be activated.</div> }
+    @if (Model.Status == "Completed" && Model.ResultsValidatedAt.HasValue) { <div class="alert alert-info">The House Committee is active. Official results will be published on <strong>@Model.ResultsPublicationAt.ToString("dd MMM yyyy HH:mm")</strong>.</div> }
     @if (Model.Status == "Archived") { <div class="alert alert-secondary">This election is archived and read-only.</div> }
     @if (Model.Status == "Candidate Review") { <div class="alert alert-info">Applications are closed and are being reviewed before the campaign starts.</div> }
     @if (Model.Status == "Candidate Review Required") { <div class="alert alert-warning">Voting cannot open until every committee position has at least one approved candidate.</div> }

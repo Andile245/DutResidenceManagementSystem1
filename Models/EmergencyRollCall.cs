@@ -31,6 +31,16 @@ namespace DUTResManagementSystem.Models
 
         public DateTime? ClosedAt { get; set; }
 
+        [StringLength(1000)]
+        public string ConclusionNotes { get; set; }
+
+        public int OutstandingPeopleCount { get; set; }
+
+        public int? ConcludedByStaffID { get; set; }
+
+        [ForeignKey("ConcludedByStaffID")]
+        public virtual Staff ConcludedBy { get; set; }
+
         public int? StartedByStaffID { get; set; }
 
         [ForeignKey("StartedByStaffID")]
